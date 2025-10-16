@@ -3,6 +3,18 @@ import Link from "next/link";
 export default function HomePage() {
   return (
     <section>
+      <nav className="flex flex-wrap items-center gap-3">
+        <Link className="btn btn-primary" href="/assess">
+          Start the Stability Check
+        </Link>
+        <Link className="btn" href="/resources">
+          Explore Resources
+        </Link>
+        <Link className="text-sm underline" href="/privacy">
+          Privacy &amp; Respect
+        </Link>
+      </nav>
+
       <h1 className="h1">Financial Wellness Companion</h1>
       <p className="lede">
         A friendly way to build financial confidence — with clear steps, plain language, and real people who care.
