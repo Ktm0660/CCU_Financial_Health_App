@@ -1,63 +1,31 @@
 import Link from "next/link";
-
 export default function HomePage() {
   return (
-    <section>
-      <nav className="flex flex-wrap items-center gap-3">
-        <Link className="btn btn-primary" href="/assess">
-          Start the Stability Check
-        </Link>
-        <Link className="btn" href="/resources">
-          Explore Resources
-        </Link>
-        <Link className="text-sm underline" href="/privacy">
-          Privacy &amp; Respect
-        </Link>
-      </nav>
-
-      <h1 className="h1">Financial Wellness Companion</h1>
-      <p className="lede">
-        A friendly way to build financial confidence — with clear steps, plain language, and real people who care.
-      </p>
-      <div
-        style={{
-          display: "flex",
-          gap: "12px",
-          flexWrap: "wrap",
-          marginTop: "16px",
-        }}
-      >
-        <Link className="btn btn-primary" href="/assess">
-          Take the Stability Check
-        </Link>
-        <Link className="btn" href="/resources">
-          Resources
-        </Link>
-      </div>
-
-      <div className="grid">
+    <div className="space-y-10">
+      <section className="card">
+        <h1 className="page-title">Money, made simpler.</h1>
+        <p className="lead mt-3">
+          Short checkup. Clear next steps. Products that fit your life.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link className="btn btn-primary" href="/assess">Take the checkup</Link>
+          <Link className="btn btn-outline" href="/products">Explore products</Link>
+        </div>
+      </section>
+      <section className="grid md:grid-cols-3 gap-6">
         <div className="card">
-          <h3>1) Take a 3-minute check-in</h3>
-          <p className="note">A warm conversation about cash flow, safety cushion, and stress — not a test.</p>
-          <Link className="btn btn-primary" href="/assess">
-            Start assessment
-          </Link>
+          <h3 className="text-xl font-semibold text-brand-navy">Simple</h3>
+          <p className="mt-2 text-brand-gray">Plain language and small steps you can use today.</p>
         </div>
         <div className="card">
-          <h3>2) Learn in small bites</h3>
-          <p className="note">Tiny lessons with real-life tips for busy people.</p>
-          <Link className="btn" href="/learn">
-            Explore lessons
-          </Link>
+          <h3 className="text-xl font-semibold text-brand-navy">Transparent</h3>
+          <p className="mt-2 text-brand-gray">Upfront about costs, terms, and how each product helps.</p>
         </div>
         <div className="card">
-          <h3>3) Grow with the right tools</h3>
-          <p className="note">From ITIN lending to small-dollar loans and counseling — built for our community.</p>
-          <Link className="btn" href="/grow">
-            See tools
-          </Link>
+          <h3 className="text-xl font-semibold text-brand-navy">Supportive</h3>
+          <p className="mt-2 text-brand-gray">Certified counselors, a mobile unit, and a community-first approach.</p>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
