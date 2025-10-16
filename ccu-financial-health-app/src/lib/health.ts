@@ -1,93 +1,81 @@
-export type DebtInputs = { monthlyIncome: number; totalDebtPayments: number };
-export type EmergencyInputs = { monthlyExpenses: number; emergencyFund: number };
+export type Numeric = number | null | undefined;
 
-function clamp(value: number, min = 0, max = 1) {
-  return Math.min(max, Math.max(min, value));
+/** Safe parse of possibly empty string */
+export function toNum(v: string | number | null | undefined): number | null {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'number' && !Number.isNaN(v)) return v;
+  const n = Number(String(v).replace(/[^0-9.\-]/g, ''));
+  return Number.isFinite(n) ? n : null;
 }
 
-export function calcDTI({ monthlyIncome, totalDebtPayments }: DebtInputs): number {
-  if (!Number.isFinite(monthlyIncome) || monthlyIncome <= 0) {
-    return 0;
-  }
-  if (!Number.isFinite(totalDebtPayments) || totalDebtPayments <= 0) {
-    return 0;
-  }
-  return clamp(totalDebtPayments / monthlyIncome, 0, 1);
+/** Debt-to-Income ratio (0..100), null-safe */
+export function calcDTI(monthlyDebt: Numeric, monthlyIncome: Numeric): number {
+  const d = typeof monthlyDebt === 'number' ? monthlyDebt : 0;
+  const i = typeof monthlyIncome === 'number' && monthlyIncome > 0 ? monthlyIncome : null;
+  if (!i) return 100; // unknown income => treat as high risk
+  const r = Math.min(1, Math.max(0, d / i));
+  return Math.round(r * 100);
 }
 
-export function calcEmergencyMonths({ monthlyExpenses, emergencyFund }: EmergencyInputs): number {
-  if (!Number.isFinite(monthlyExpenses) || monthlyExpenses <= 0) {
-    return 0;
-  }
-  if (!Number.isFinite(emergencyFund) || emergencyFund <= 0) {
-    return 0;
-  }
-  return clamp(emergencyFund / monthlyExpenses, 0, 12);
+/** Months of emergency fund (0..12 capped) */
+export function calcEmergencyMonths(opts: { monthlyExpenses: Numeric; emergencyFund: Numeric }): number {
+  const e = typeof opts.monthlyExpenses === 'number' && opts.monthlyExpenses > 0 ? opts.monthlyExpenses : null;
+  const f = typeof opts.emergencyFund === 'number' ? opts.emergencyFund : 0;
+  if (!e) return 0;
+  return Math.min(12, Math.max(0, Math.round((f / e) * 10) / 10));
 }
 
-export function calcSavingsProgress(contributions: number[]): number {
-  if (!Array.isArray(contributions) || contributions.length === 0) {
-    return 0;
-  }
-  const total = contributions
-    .filter((value) => Number.isFinite(value) && value > 0)
-    .reduce((sum, value) => sum + value, 0);
-  if (total <= 0) {
-    return 0;
-  }
-  return clamp(total / 500);
+/** Very simple savings momentum 0..100 based on 3 months history */
+export function calcSavingsProgress(last3: number[]): number {
+  if (!last3.length) return 0;
+  const total = last3.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
+  const avg = total / last3.length;
+  const score = Math.max(0, Math.min(100, Math.round((avg / 500) * 100))); // 500 is arbitrary baseline
+  return score;
 }
 
-export function normalizeTo100(dti: number, emergencyMonths: number, savingsProgress: number, creditUtilization: number): number {
-  const dtiScore = clamp(1 - dti) * 25;
-  const emergencyScore = clamp(emergencyMonths / 6) * 25;
-  const savingsScore = clamp(savingsProgress) * 25;
-  const creditScore = clamp(1 - clamp(creditUtilization / 100)) * 25;
-  const total = dtiScore + emergencyScore + savingsScore + creditScore;
-  return Math.round(total);
+/** Normalize any number of metrics (0..100 good=high) into a single 0..100 score */
+export function normalizeTo100(...metrics: Numeric[]): number {
+  // nulls are ignored; if all null => 50 (neutral)
+  const usable = metrics
+    .map(m => (typeof m === 'number' ? m : null))
+    .filter((m): m is number => m !== null && Number.isFinite(m));
+  if (!usable.length) return 50;
+  // DTI is "lower is better"; assume inputs already oriented high-is-good except DTI
+  // Caller should send (100 - dti) for DTI.
+  const avg = usable.reduce((a, b) => a + b, 0) / usable.length;
+  return Math.round(Math.max(0, Math.min(100, avg)));
 }
 
-export function scoreToBand(score: number): string {
-  if (score >= 80) return "Thriving";
-  if (score >= 60) return "Stable";
-  if (score >= 40) return "Building";
-  return "Emerging";
+export type Band = 'Stabilizing' | 'Building' | 'Thriving';
+
+export function scoreToBand(score: number): Band {
+  if (score < 40) return 'Stabilizing';
+  if (score < 70) return 'Building';
+  return 'Thriving';
 }
 
-export function buildRecommendations(dti: number, emergencyMonths: number, savingsProgress: number, creditUtilization: number): string[] {
-  const tips: string[] = [];
-
-  if (dti > 0.43) {
-    tips.push("Consider consolidating or refinancing high-interest debts to lower your monthly payments.");
-  } else if (dti > 0.3) {
-    tips.push("Try directing small windfalls toward extra debt payments to gradually reduce balances.");
-  } else {
-    tips.push("Keep tracking your debt-to-income ratio so you stay ahead of major expenses.");
+export function buildRecommendations(input: {
+  dti: number;
+  monthsEmergency: number;
+  savingsMomentum: number;
+  creditUtilization: number;
+}): string[] {
+  const recs: string[] = [];
+  if (input.monthsEmergency < 1) {
+    recs.push('Start a $10–$25 “first cushion” auto-transfer into a separate savings pocket.');
+  } else if (input.monthsEmergency < 3) {
+    recs.push('Grow your emergency fund toward 1–3 months. Small, automatic transfers beat occasional big ones.');
   }
-
-  if (emergencyMonths < 1) {
-    tips.push("Start a mini emergency fund by setting aside $25-$50 per paycheck in a separate account.");
-  } else if (emergencyMonths < 3) {
-    tips.push("Aim to build your emergency fund toward 3 months of expenses to cushion surprises.");
-  } else {
-    tips.push("Great job on your emergency reserves—consider labeling a portion for future goals.");
+  if (input.dti > 45) {
+    recs.push('Consider a small-dollar consolidation loan to replace high-cost payday or title loans.');
   }
-
-  if (savingsProgress < 0.25) {
-    tips.push("Automate a small transfer to savings each payday to make progress without thinking about it.");
-  } else if (savingsProgress < 0.75) {
-    tips.push("Review your goals and increase contributions when raises or windfalls arrive.");
-  } else {
-    tips.push("Celebrate your steady savings habit and check if any goals need a refresh.");
+  if (input.creditUtilization > 50) {
+    recs.push('Aim to keep credit card balances under ~30% of limits; payments right after payday help.');
   }
-
-  if (creditUtilization > 50) {
-    tips.push("Work toward paying cards down below 50% of their limits to boost your credit health.");
-  } else if (creditUtilization > 30) {
-    tips.push("Aim to keep card balances below 30% of limits by making mid-cycle payments.");
-  } else {
-    tips.push("Your credit use looks balanced—keep paying on time to maintain momentum.");
+  if (input.savingsMomentum < 30) {
+    recs.push('Use round-ups or paycheck splits to make saving effortless.');
   }
-
-  return tips;
+  recs.push('Meet with a certified financial counselor (free, judgment-free).');
+  return recs;
 }
