@@ -44,7 +44,7 @@ export default function AssessPage() {
         credit: creditUtilization == null ? "" : String(creditUtilization),
         recs: encodeURIComponent(JSON.stringify(recs)),
       });
-      window.location.href = \`/report?\${params.toString()}\`;
+      window.location.href = `/report?${params.toString()}`;
     } catch (err: unknown) {
       setError(getErrorMessage(err));
       setLoading(false);
