@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { calcDTI, calcEmergencyMonths, calcSavingsProgress, normalizeTo100, scoreToBand, buildRecommendations } from "@/lib/health";
+import { calcDTI, calcEmergencyMonths, calcSavingsProgress, normalizeTo100, scoreToBand, buildRecommendations } from "../../lib/health";
 
 function getErrorMessage(e: unknown): string {
   if (e instanceof Error) return e.message;
