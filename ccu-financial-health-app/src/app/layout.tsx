@@ -1,9 +1,10 @@
-import './globals.css';
-import type { Metadata } from 'next';
+import "./globals.css";
+import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: 'Connections CU • Financial Wellness Companion',
-  description: 'Build financial confidence with clear steps, tools, and real human help.',
+  title: "Connections CU • Financial Wellness Companion",
+  description: "Build financial confidence with clear steps, tools, and real human help.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -12,11 +13,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <header className="site-header">
           <div className="container header-row">
-            <a className="brand" href="/">Connections CU</a>
+            <Link className="brand" href="/">
+              Connections CU
+            </Link>
             <nav className="nav">
-              <a href="/assess">Assessment</a>
-              <a href="/learn">Learn</a>
-              <a href="/grow">Grow</a>
+              <Link href="/assess">Assess</Link>
+              <Link href="/resources">Resources</Link>
+              <Link href="/learn">Learn</Link>
+              <Link href="/grow">Grow</Link>
             </nav>
           </div>
         </header>
