@@ -35,7 +35,7 @@ export default function Assess(){
 
       {step===0 && (
         <Card className="p-6">
-          <p className="text-[var(--sub)]">Answer a few quick questions in plain language. We’ll show gentle next steps—no judgments.</p>
+          <p className="text-[var(--ink-2)]">Answer a few quick questions in plain language. We’ll show gentle next steps—no judgments.</p>
           <div className="mt-6"><Button onClick={()=>setStep(1)}>{t("assess.start")}</Button></div>
         </Card>
       )}
@@ -43,7 +43,7 @@ export default function Assess(){
       {step>0 && step<=qs.length && (
         <Card className="p-6">
           <div className="mb-4 flex items-center justify-between">
-            <div className="text-sm text-[var(--sub)]">Question {step} of {qs.length}</div>
+            <div className="text-sm text-[var(--ink-2)]">Question {step} of {qs.length}</div>
             <div className="h-2 w-40 rounded bg-[var(--line)]">
               <div className="h-2 rounded bg-[var(--accent)] transition-[width]" style={{width:`${(step/qs.length)*100}%`}} />
             </div>
@@ -62,14 +62,14 @@ export default function Assess(){
           <Card className="p-6">
             <h2 className="text-xl font-semibold">Your starting point</h2>
             <div className="mt-4 rounded-xl border border-[var(--line)] bg-white p-6 text-center">
-              <div className="text-sm uppercase tracking-wide text-[var(--sub)]">Wellness Score</div>
+              <div className="text-sm uppercase tracking-wide text-[var(--ink-2)]">Wellness Score</div>
               <div className="mt-2 text-5xl font-semibold">{score}</div>
-              <div className="mt-2 text-sm text-[var(--sub)]">Higher is better (1–100)</div>
+              <div className="mt-2 text-sm text-[var(--ink-2)]">Higher is better (1–100)</div>
             </div>
           </Card>
           <Card className="p-6 lg:col-span-2">
             <h3 className="text-lg font-semibold">Next steps</h3>
-            <ul className="mt-3 space-y-2 text-[var(--sub)]">
+            <ul className="mt-3 space-y-2 text-[var(--ink-2)]">
               <li>• If expenses + debt &gt;60% of income, let’s review a spending plan.</li>
               <li>• Aim for 1–3 months of expenses in savings; consider auto-transfer.</li>
               <li>• Keep card use under 30% of limit; ask about balance transfer tools.</li>
