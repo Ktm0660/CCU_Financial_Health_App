@@ -1,12 +1,14 @@
-import { SectionTitle, Card, Button } from "@/components/ui";
-export default function Resources(){
+import Card from "@/components/Card";
+
+export default function ResourcesPage() {
   return (
-    <section className="space-y-6">
-      <SectionTitle kicker="Learn">Resources</SectionTitle>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-extrabold text-[var(--ink)]">Resources</h1>
       <Card className="p-6">
-        <p className="text-[var(--ink-2)]">Plain-language articles and tools to help you feel confident with money.</p>
-        <div className="mt-4"><a href="https://www.connectidaho.org/resources" target="_blank"><Button>Open Resource Center</Button></a></div>
+        <p className="text-[var(--ink-2)]">
+          Guides in plain language are coming soon. Ask a counselor any time.
+        </p>
       </Card>
-    </section>
+    </div>
   );
 }
