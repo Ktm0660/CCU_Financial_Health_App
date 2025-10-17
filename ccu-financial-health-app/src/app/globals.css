@@ -3,32 +3,56 @@
 @tailwind utilities;
 
 @layer base {
-  html, body {
-    background-color: var(--bg);
-    color: #1f2937;
+  html {
+    font-size: 106.25%;
+    line-height: 1.55;
+    color: #0d2940;
+    background: linear-gradient(180deg, #F7FBFF 0%, #FFFFFF 60%);
   }
-  :root {
-    --bg: #F6FAFD; /* brand.mist */
+
+  body {
+    @apply antialiased;
   }
 }
 
-@layer utilities {
-  .gradient-btn {
-    background-image: linear-gradient(to right, #1F63B6, #27B0C7);
-    color: #ffffff;
-    box-shadow: 0 6px 24px rgba(13, 53, 84, 0.08);
-    border-radius: 9999px;
+@layer components {
+  .container-page {
+    @apply mx-auto px-4 max-w-screen-md;
   }
+
   .card {
-    background-color: #ffffff;
-    box-shadow: 0 8px 30px rgba(13, 53, 84, 0.1);
-    border-radius: 1.75rem;
+    @apply bg-white rounded-2xl shadow-[0_2px_14px_rgba(14,47,68,0.08)] border border-[#E7EEF6];
   }
-  .eyebrow {
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: rgba(13, 53, 84, 0.7);
+
+  .card-pad {
+    @apply p-5;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center rounded-2xl px-5 py-3 text-base font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-teal/30;
+  }
+
+  .btn-primary {
+    @apply btn text-white bg-gradient-to-r from-brand-navy to-brand-teal hover:from-brand-teal hover:to-brand-navy;
+  }
+
+  .btn-ghost {
+    @apply btn border border-brand-navy/20 text-brand-navy bg-white hover:bg-brand-soft;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-brand-soft text-brand-navy/80 border border-brand-navy/10;
+  }
+
+  .section-title {
+    @apply text-3xl font-extrabold tracking-tight text-brand-navy;
+  }
+
+  .section-sub {
+    @apply text-brand-navy/70;
+  }
+
+  .list-dot {
+    @apply list-disc pl-5 space-y-1 text-brand-navy/90;
   }
 }

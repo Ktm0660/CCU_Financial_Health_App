@@ -1,4 +1,8 @@
-import React from 'react';
-export default function Container({ children, className = '' }: React.PropsWithChildren<{className?: string}>) {
-  return <div className={`mx-auto max-w-2xl lg:max-w-5xl px-4 sm:px-6 ${className}`}>{children}</div>;
+import React from "react";
+
+type Props = React.PropsWithChildren<{ className?: string }>;
+
+export default function Container({ children, className = "" }: Props) {
+  const classes = ["container-page", "sm:px-6", className].filter(Boolean).join(" ");
+  return <div className={classes}>{children}</div>;
 }

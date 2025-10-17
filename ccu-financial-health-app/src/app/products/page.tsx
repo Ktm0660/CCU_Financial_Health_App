@@ -7,33 +7,38 @@ const products = [
   {name:"Everyday Checking", apr:"No monthly fee", pitch:"Direct deposit friendly, free bill-pay.", bullets:["Free debit card","Early direct deposit (where available)","Overdraft options explained upfront"]},
 ];
 
-export default function Products(){
+export default function Products() {
   return (
-    <Container>
-      <div className="space-y-6">
-        <section className="card p-6 sm:p-8">
-          <h1 className="text-3xl font-semibold text-[color:#0D3554]">Products &amp; terms</h1>
-          <p className="mt-3 text-slate-600 max-w-prose">Clear costs. No surprises. We’ll help you choose what fits your situation.</p>
-        </section>
+    <Container className="space-y-6">
+      <section className="card card-pad sm:p-6 space-y-3">
+        <h1 className="section-title sm:text-4xl">Products &amp; terms</h1>
+        <p className="section-sub max-w-prose text-base">
+          Clear costs. No surprises. We’ll help you choose what fits your situation.
+        </p>
+      </section>
 
-        <div>
-          {products.map((p)=>(
-            <article key={p.name} className="card p-6 sm:p-8 mb-5 last:mb-0">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <h2 className="text-xl font-semibold text-[color:#0D3554]">{p.name}</h2>
-                <span className="px-3 py-1 rounded-full bg-[rgb(14,125,182,0.08)] text-[color:#0D3554] text-sm font-medium">{p.apr}</span>
-              </div>
-              <p className="mt-3 text-slate-600">{p.pitch}</p>
-              <ul className="mt-4 list-disc pl-5 text-slate-600 space-y-2">
-                {p.bullets.map(b=><li key={b}>{b}</li>)}
-              </ul>
-              <button className="mt-5 gradient-btn inline-flex min-h-[44px] items-center justify-center px-6 py-3 font-semibold" aria-label={`I'm interested in ${p.name}`}>
-                I’m interested
-              </button>
-            </article>
-          ))}
-        </div>
+      <div className="space-y-4">
+        {products.map((p) => (
+          <article key={p.name} className="card card-pad sm:p-6 space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h2 className="text-xl font-semibold text-brand-navy">{p.name}</h2>
+              <span className="badge bg-brand-soft text-brand-navy/80 border-brand-navy/15">{p.apr}</span>
+            </div>
+            <p className="text-base text-brand-navy/75">{p.pitch}</p>
+            <ul className="list-dot">
+              {p.bullets.map((b) => (
+                <li key={b}>{b}</li>
+              ))}
+            </ul>
+            <button
+              className="btn-primary w-full sm:w-auto"
+              aria-label={`I'm interested in ${p.name}`}
+            >
+              I’m interested
+            </button>
+          </article>
+        ))}
       </div>
     </Container>
-  )
+  );
 }

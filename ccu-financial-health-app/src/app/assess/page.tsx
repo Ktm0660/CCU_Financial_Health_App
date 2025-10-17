@@ -49,12 +49,15 @@ const QUESTIONS: Q[] = [
 ];
 
 // UI bits
-function Chip({label, pressed, onClick}:{label:string; pressed:boolean; onClick:()=>void}) {
+function Chip({ label, pressed, onClick }: { label: string; pressed: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
-      className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-medium transition-colors hover:border-[color:#0E7DB6] hover:text-[color:#0E7DB6] data-[active=true]:bg-[rgb(14,125,182,0.10)]"
-      data-active={pressed}
+      className={`btn-ghost min-h-[44px] px-4 py-2.5 text-sm font-semibold transition ${
+        pressed
+          ? "border-brand-teal/50 bg-brand-sky text-brand-navy ring-2 ring-brand-teal/40"
+          : "text-brand-navy/80"
+      }`}
       aria-pressed={pressed}
       onClick={onClick}
     >
@@ -86,7 +89,7 @@ export default function Assess() {
     setAnswers(prev => ({...prev, [id]: val}));
   }
 
-  const progressPercent = Math.round((step / QUESTIONS.length) * 100);
+  const progressPercent = Math.round(((step + 1) / QUESTIONS.length) * 100);
 
   // Compute score
   const { score, band, recs } = useMemo(()=>{
@@ -229,142 +232,138 @@ export default function Assess() {
   const canNext = step < QUESTIONS.length - 1;
   const canBack = step > 0;
 
-  const bandTone = band === "Great" ? "text-emerald-600 bg-[rgb(16,185,129,0.12)]" : band === "Okay" ? "text-amber-600 bg-[rgb(217,119,6,0.12)]" : "text-rose-600 bg-[rgb(220,38,38,0.12)]";
+  const bandTone =
+    band === "Great"
+      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+      : band === "Okay"
+        ? "bg-amber-50 text-amber-700 border-amber-200"
+        : "bg-rose-50 text-rose-700 border-rose-200";
 
   return (
-    <Container>
-      <div className="space-y-6">
-        <div className="card p-6 sm:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <span className="eyebrow">Financial Wellness Check</span>
-              <h1 className="mt-2 text-2xl font-semibold text-[color:#0D3554]">Step {step + 1} of {QUESTIONS.length}</h1>
-            </div>
-            <span className="text-sm text-slate-500">{progressPercent}% complete</span>
+    <Container className="space-y-6">
+      <div className="card card-pad sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-navy/60">Financial Wellness Check</p>
+            <h1 className="text-xl font-semibold text-brand-navy">Step {step + 1} of {QUESTIONS.length}</h1>
           </div>
-          <div className="mt-4 space-y-2">
-            <Bar value={progressPercent} />
-            <div className="flex items-center justify-between text-sm text-slate-500">
-              <span>Question {step + 1}</span>
-              <span>{progressPercent}%</span>
-            </div>
+          <span className="text-sm font-medium text-brand-navy/70">{progressPercent}% complete</span>
+        </div>
+        <div className="mt-4 space-y-2">
+          <Bar value={progressPercent} />
+          <div className="flex items-center justify-between text-sm text-brand-navy/60">
+            <span>Question {step + 1}</span>
+            <span>{progressPercent}%</span>
           </div>
         </div>
+      </div>
 
-        <div className="lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-6">
-          <section className="card p-6 sm:p-8">
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold text-[color:#0D3554]">{q.label}</h2>
-                {q.help ? <p className="mt-2 text-slate-600">{q.help}</p> : null}
-              </div>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-6">
+        <section className="card card-pad sm:p-8 space-y-6">
+          <div className="space-y-3">
+            <h2 className="text-2xl font-semibold text-brand-navy">{q.label}</h2>
+            {q.help ? <p className="text-base text-brand-navy/70">{q.help}</p> : null}
+          </div>
 
-              {q.kind === "chips" && (
-                <div className="flex flex-wrap gap-3">
-                  {(q.options || []).map((opt) => {
-                    const pressed = answers[q.id] === opt;
-                    return <Chip key={opt} label={opt} pressed={!!pressed} onClick={() => setAnswer(q.id, opt)} />;
-                  })}
-                </div>
-              )}
+          {q.kind === "chips" && (
+            <div className="flex flex-wrap gap-3">
+              {(q.options || []).map((opt) => {
+                const pressed = answers[q.id] === opt;
+                return <Chip key={opt} label={opt} pressed={!!pressed} onClick={() => setAnswer(q.id, opt)} />;
+              })}
+            </div>
+          )}
 
-              {q.kind === "number" && (
-                <input
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 shadow-soft focus:border-[color:#0E7DB6] focus:outline-none focus:ring-2 focus:ring-[rgb(14,125,182,0.2)] text-[color:#0D3554]"
-                  inputMode="decimal"
-                  placeholder="Type an amount"
-                  value={(answers[q.id] as number | "" | undefined) ?? ""}
-                  onChange={(e) => setAnswer(q.id, Number(e.target.value || 0))}
-                />
-              )}
+          {q.kind === "number" && (
+            <input
+              className="form-input w-full rounded-2xl border border-brand-navy/15 bg-white px-4 py-3 text-base text-brand-navy focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/30"
+              inputMode="decimal"
+              placeholder="Type an amount"
+              value={(answers[q.id] as number | "" | undefined) ?? ""}
+              onChange={(e) => setAnswer(q.id, Number(e.target.value || 0))}
+            />
+          )}
 
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-navy/10 pt-4">
+            <button
+              className="btn-ghost min-w-[44%] sm:min-w-[0] disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => setStep((s) => Math.max(0, s - 1))}
+              disabled={!canBack}
+            >
+              Back
+            </button>
+            <div className="flex flex-wrap justify-end gap-3 min-w-[44%] sm:min-w-[0]">
+              {canNext ? (
                 <button
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[color:#0E7DB6]/30 px-6 py-3 text-[color:#0E7DB6] hover:bg-[rgb(14,125,182,0.06)] disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => setStep((s) => Math.max(0, s - 1))}
-                  disabled={!canBack}
+                  className="btn-primary"
+                  onClick={() => setStep((s) => Math.min(QUESTIONS.length - 1, s + 1))}
                 >
-                  Back
+                  Next
                 </button>
-                <div className="flex flex-wrap gap-3">
-                  {canNext ? (
-                    <button
-                      className="gradient-btn inline-flex min-h-[44px] items-center justify-center px-6 py-3 font-semibold"
-                      onClick={() => setStep((s) => Math.min(QUESTIONS.length - 1, s + 1))}
-                    >
-                      Next
-                    </button>
-                  ) : (
-                    <a className="gradient-btn inline-flex min-h-[44px] items-center justify-center px-6 py-3 font-semibold" href="#results">
-                      See my results
-                    </a>
-                  )}
-                </div>
-              </div>
+              ) : (
+                <a className="btn-primary" href="#results">
+                  See my results
+                </a>
+              )}
             </div>
-          </section>
+          </div>
+        </section>
 
-          <aside id="results" className="card p-6 sm:p-8 mt-6 lg:mt-0">
-            <div className="space-y-6">
-              <div>
-                <span className="eyebrow">Your snapshot</span>
-                <div className="mt-4 flex flex-wrap items-baseline justify-between gap-3">
-                  <h3 className="text-xl font-semibold text-[color:#0D3554]">Score</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${bandTone}`}>{band}</span>
-                </div>
-                <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-3xl font-semibold text-[color:#0D3554]">{score}</span>
-                  <span className="text-slate-500">/ 100</span>
-                </div>
-                <div className="mt-3 space-y-2">
-                  <Bar value={score} />
-                  <p className="text-sm text-slate-600">
-                    Higher is better. We’ll aim for steady gains with small, doable steps.
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-[color:#0D3554]">Next steps (no pressure)</h3>
-                <ul className="mt-3 space-y-2 list-disc pl-5 text-slate-600">
-                  {recs.length === 0 ? (
-                    <li>You’re in a good spot. Keep going—we’re here when you need us.</li>
-                  ) : (
-                    recs.map((r) => (
-                      <li key={r.title}>
-                        <strong className="text-[color:#0D3554]">{r.title}.</strong> {r.why}
-                      </li>
-                    ))
-                  )}
-                </ul>
-
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <a className="gradient-btn inline-flex min-h-[44px] items-center justify-center px-6 py-3 font-semibold" href="/products">
-                    See options &amp; terms
-                  </a>
-                  <a
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[color:#0E7DB6]/30 px-6 py-3 text-[color:#0E7DB6] hover:bg-[rgb(14,125,182,0.06)]"
-                    href="/learn"
-                  >
-                    Learn more
-                  </a>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-[color:#0D3554]">Your choices</h3>
-                <div className="mt-3 space-y-3 text-sm text-slate-600">
-                  {QUESTIONS.map((question) => (
-                    <div key={question.id} className="flex items-start justify-between gap-3">
-                      <span className="text-slate-500">{question.label}</span>
-                      <strong className="text-[color:#0D3554]">{answers[question.id] ? String(answers[question.id]) : "—"}</strong>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        <aside id="results" className="card card-pad sm:p-8 mt-6 space-y-6 lg:mt-0">
+          <div className="space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-navy/60">Your snapshot</p>
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h3 className="text-xl font-semibold text-brand-navy">Score</h3>
+              <span className={`badge ${bandTone}`}>{band}</span>
             </div>
-          </aside>
-        </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-semibold text-brand-navy">{score}</span>
+              <span className="text-base font-medium text-brand-navy/60">/ 100</span>
+            </div>
+            <div className="space-y-2">
+              <Bar value={score} />
+              <p className="text-sm text-brand-navy/70">
+                Higher is better. We’ll aim for steady gains with small, doable steps.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-brand-navy">Next steps (no pressure)</h3>
+            <ul className="list-dot">
+              {recs.length === 0 ? (
+                <li>You’re in a good spot. Keep going—we’re here when you need us.</li>
+              ) : (
+                recs.map((r) => (
+                  <li key={r.title}>
+                    <span className="font-semibold text-brand-navy">{r.title}.</span> {r.why}
+                  </li>
+                ))
+              )}
+            </ul>
+
+            <div className="flex flex-wrap gap-3">
+              <a className="btn-primary min-w-[44%] sm:min-w-[0]" href="/products">
+                See options &amp; terms
+              </a>
+              <a className="btn-ghost min-w-[44%] sm:min-w-[0]" href="/learn">
+                Learn more
+              </a>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-brand-navy">Your choices</h3>
+            <div className="space-y-3 text-sm text-brand-navy/70">
+              {QUESTIONS.map((question) => (
+                <div key={question.id} className="flex items-start justify-between gap-3">
+                  <span className="flex-1 text-brand-navy/60">{question.label}</span>
+                  <strong className="text-brand-navy">{answers[question.id] ? String(answers[question.id]) : "—"}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
       </div>
     </Container>
   );
