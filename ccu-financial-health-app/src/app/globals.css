@@ -2,19 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Brand tokens (no theme() usage) */
 :root{
-  --ink:#0B2E4E;          /* primary text */
-  --accent:#2E6D8A;       /* links & primary buttons */
-  --accent-700:#25566D;   /* hover */
-  --sub:#335E7E;          /* secondary text */
-  --bg-soft:#F6FAFF;      /* page background */
-  --card:#FFFFFF;         /* cards */
-  --line:#E6EEF7;         /* borders */
-  --ring:#9CC6DA;         /* focus ring */
+  --ink:#0b2e4e;          /* deep navy text */
+  --ink-2:#335e7e;        /* secondary text */
+  --accent:#2e6d8a;       /* connections blue */
+  --accent-700:#25566d;   /* darker hover */
+  --bg:#f4f8fd;           /* soft backdrop */
+  --card:#ffffff;         /* card surface */
+  --line:#e3edf6;         /* borders */
+  --ring:#9cc6da;         /* focus ring */
 }
 
 html,body{height:100%}
-body{color:var(--ink); background:linear-gradient(180deg,var(--bg-soft),#fff 40%,var(--bg-soft));}
+body{
+  color:var(--ink);
+  background:linear-gradient(180deg,var(--bg),#fff 55%,var(--bg));
+  font-feature-settings:"liga" 1,"calt" 1;
+}
 
-a{color:inherit}
+*{scroll-behavior:smooth}
+::selection{background:var(--accent);color:white}

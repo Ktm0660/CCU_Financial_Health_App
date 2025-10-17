@@ -9,11 +9,9 @@ export function Container({className,children}:{className?:string;children:React
 export function Card({className,children}:{className?:string;children:ReactNode}){
   return (
     <div className={clsx(
-      "rounded-2xl border border-[var(--line)] bg-[var(--card)]/95 shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:shadow-md",
+      "rounded-2xl border border-[var(--line)] bg-[var(--card)] shadow-sm ring-1 ring-black/5 backdrop-blur-sm transition hover:shadow-md",
       className
-    )}>
-      {children}
-    </div>
+    )}>{children}</div>
   );
 }
 
@@ -25,8 +23,8 @@ export function Button(
   const styles=variant==="primary"
     ? "bg-[var(--accent)] text-white hover:bg-[var(--accent-700)] focus-visible:ring-[var(--ring)]"
     : variant==="outline"
-      ? "border border-[var(--line)] text-[var(--ink)] bg-white hover:bg-[var(--bg-soft)] focus-visible:ring-[var(--ring)]"
-      : "text-[var(--accent)] hover:bg-[var(--bg-soft)]";
+      ? "border border-[var(--line)] text-[var(--ink)] bg-white hover:bg-[#f8fbff] focus-visible:ring-[var(--ring)]"
+      : "text-[var(--accent)] hover:bg-[#f1f7fc]";
   return <button className={clsx(base,styles,className)} {...props}>{children}</button>;
 }
 
@@ -48,10 +46,10 @@ export function Field(
       <span className="text-sm font-medium">{label}</span>
       <input
         type={type}
-        className="mt-1 w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[var(--ink)] placeholder-[#9FB4C8] shadow-sm focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--ring)] outline-none"
+        className="mt-1 w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-[var(--ink)] placeholder-[#9fb4c8] shadow-sm focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--ring)] outline-none"
         {...props}
       />
-      {hint && <span className="mt-1 block text-xs text-[var(--sub)]">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-[var(--ink-2)]">{hint}</span>}
     </label>
   );
 }

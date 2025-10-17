@@ -5,13 +5,12 @@ import { Container } from "@/components/ui";
 import LanguageToggle from "@/components/LanguageToggle";
 import { t } from "@/lib/i18n";
 
-export const metadata={title:"Connections Financial Wellness",description:"Simple steps, caring guidance."};
+export const metadata={title:"Connections Financial Wellness",description:"Simple steps, transparent options, caring guidance."};
 
 export default function RootLayout({children}:{children:ReactNode}){
   return (
     <html lang="en">
       <body className="min-h-screen">
-        {/* top bar */}
         <div className="h-1 w-full bg-[var(--accent)]" />
         <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-white/90 backdrop-blur">
           <Container className="flex items-center justify-between py-3">
@@ -30,7 +29,7 @@ export default function RootLayout({children}:{children:ReactNode}){
         </header>
         <main><Container className="py-10">{children}</Container></main>
         <footer className="mt-16 border-t border-[var(--line)] bg-white/90">
-          <Container className="py-8 text-sm text-[var(--sub)]">
+          <Container className="py-8 text-sm text-[var(--ink-2)]">
             © {new Date().getFullYear()} Connections Credit Union — {t("footer.rights")}
           </Container>
         </footer>
