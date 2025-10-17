@@ -2,12 +2,15 @@
 
 import { setLocale, t } from "@/lib/i18n";
 import { useLocale } from "@/lib/i18n-client";
+import { Button } from "@/components/ui";
 
 export default function LanguageToggle() {
   const lang = useLocale();
   return (
-    <button
-      className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium transition hover:opacity-90"
+    <Button
+      type="button"
+      variant="outline"
+      className="px-3 py-1.5 text-xs uppercase tracking-wide"
       onClick={() => {
         const next = lang === "en" ? "es" : "en";
         setLocale(next);
@@ -18,6 +21,6 @@ export default function LanguageToggle() {
       aria-label="Toggle language"
     >
       {t("nav.language")}
-    </button>
+    </Button>
   );
 }
