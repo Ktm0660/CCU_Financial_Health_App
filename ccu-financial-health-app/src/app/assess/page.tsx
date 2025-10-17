@@ -1,136 +1,289 @@
 "use client";
 import { useMemo, useState } from "react";
 
-type ScoreBand = "Great" | "Okay" | "Needs attention";
-function bandFor(score:number): ScoreBand {
+/**
+ * New super-simple 6-question flow.
+ * 1) Pay timing: steady / uneven
+ * 2) Income range (tap chip)
+ * 3) Housing type (rent / own / with family) + quick amount if rent/own
+ * 4) Monthly debt payments (chip or number)
+ * 5) Savings today (chip or number)
+ * 6) Confidence / stress (chip)
+ *
+ * Score = weighted blend (0–100). Recs map to answers with plain-language reasons.
+ */
+
+type Band = "Great" | "Okay" | "Needs attention";
+function bandFor(score:number): Band {
   if (score >= 75) return "Great";
   if (score >= 50) return "Okay";
   return "Needs attention";
 }
 
+function Chip({label, pressed, onClick}:{label:string; pressed:boolean; onClick:()=>void}) {
+  return <button type="button" className="btn-chip" aria-pressed={pressed} onClick={onClick}>{label}</button>;
+}
+
 export default function Assess() {
-  const [income, setIncome] = useState<number | "">("");
-  const [rent, setRent] = useState<number | "">("");
-  const [debt, setDebt] = useState<number | "">("");
-  const [savings, setSavings] = useState<number | "">("");
-  const [payTiming, setPayTiming] = useState("steady"); // steady | uneven
-  const [emergency, setEmergency] = useState("no");     // yes | no
+  // Q1 Pay timing
+  const [payTiming, setPayTiming] = useState<"steady" | "uneven">("steady");
 
-  const score = useMemo(() => {
-    const i = typeof income === "number" ? income : 0;
-    const r = typeof rent === "number" ? rent : 0;
-    const d = typeof debt === "number" ? debt : 0;
-    const s = typeof savings === "number" ? savings : 0;
+  // Q2 Income range (monthly take-home)
+  const incomeOptions = ["< $2k","$2k–$3k","$3k–$4k","$4k–$6k",">$6k"] as const;
+  type IncomeOpt = typeof incomeOptions[number];
+  const [incomeRange, setIncomeRange] = useState<IncomeOpt | null>(null);
+  const incomeMid = useMemo(()=>({
+    "< $2k":1500, "$2k–$3k":2500, "$3k–$4k":3500, "$4k–$6k":5000, ">$6k":7000
+  } as Record<IncomeOpt, number>),[]);
 
+  // Q3 Housing
+  const [housing, setHousing] = useState<"rent"|"own"|"family"|null>(null);
+  const [housingAmt, setHousingAmt] = useState<string>(""); // optional
+
+  // Q4 Debt payments
+  const debtOptions = ["$0–$100","$100–$300","$300–$600",">$600"] as const;
+  type DebtOpt = typeof debtOptions[number];
+  const [debtRange, setDebtRange] = useState<DebtOpt | null>(null);
+  const [debtAmt, setDebtAmt] = useState<string>(""); // optional manual
+
+  // Q5 Savings
+  const saveOptions = ["$0","$1–$500","$500–$2k",">$2k"] as const;
+  type SaveOpt = typeof saveOptions[number];
+  const [saveRange, setSaveRange] = useState<SaveOpt | null>(null);
+  const [saveAmt, setSaveAmt] = useState<string>("");
+
+  // Q6 Confidence (self-report)
+  const confidenceOpts = ["Calm","Managing","Stressed"] as const;
+  type ConfOpt = typeof confidenceOpts[number];
+  const [confidence, setConfidence] = useState<ConfOpt | null>(null);
+
+  // Numeric rollups
+  const income = incomeRange ? incomeMid[incomeRange] : 0;
+  const housingNum = Number(housingAmt || 0);
+  const debtNum = debtRange ? (
+    debtRange==="$0–$100"?100:
+    debtRange==="$100–$300"?300:
+    debtRange==="$300–$600"?600:800
+  ) : Number(debtAmt || 0);
+  const saveNum = saveRange ? (
+    saveRange==="$0"?0:
+    saveRange==="$1–$500"?500:
+    saveRange==="$500–$2k"?2000:4000
+  ) : Number(saveAmt || 0);
+
+  // Score
+  const score = useMemo(()=>{
     let raw = 0;
-    raw += i > 0 ? Math.max(0, 35 - (r / i) * 100) : 0; // housing
-    raw += i > 0 ? Math.max(0, 30 - (d / i) * 100) : 0; // debt payments
-    raw += Math.min(35, (s / (i || 1)) * 100);          // savings
-    if (payTiming === "steady") raw += 5;
-    if (emergency === "yes") raw += 5;
+    // Housing affordability (35% target)
+    if (housing === "family") {
+      raw += 28;
+    } else if (income > 0) {
+      const h = housingNum;
+      const pct = (h / income) * 100;
+      raw += Math.max(0, 35 - Math.min(100, pct)); // 0..35
+    }
+
+    // Debt load (30% target of income)
+    if (income > 0) {
+      const pct = (debtNum / income) * 100;
+      raw += Math.max(0, 30 - Math.min(100, pct)); // 0..30
+    }
+
+    // Savings cushion (0..30 scaled vs income)
+    if (income > 0) {
+      raw += Math.min(30, (saveNum / income) * 100);
+    }
+
+    // Stability bonuses (5 total)
+    if (payTiming === "steady") raw += 3;
+    if (confidence === "Calm") raw += 2;
+    if (confidence === "Managing") raw += 1;
 
     return Math.max(0, Math.min(100, Math.round(raw)));
-  }, [income, rent, debt, savings, payTiming, emergency]);
+  },[housing, housingNum, income, debtNum, saveNum, payTiming, confidence]);
 
   const band = bandFor(score);
 
+  // Recommendations (plain language + gentle suggestions)
+  const recs = useMemo(()=>{
+    const list: {title:string; why:string}[] = [];
+
+    // Liquidity
+    if (saveNum < 300) {
+      list.push({
+        title: "Build a small cash cushion",
+        why: "A little buffer ($20–$50 per paycheck) reduces fees and stress."
+      });
+    }
+
+    // Housing
+    if (housing !== "family" && income>0 && (housingNum/income) > 0.4) {
+      list.push({
+        title: "Lower housing costs over time",
+        why: "Aim near 35% of take-home pay. We can brainstorm steps together."
+      });
+    }
+
+    // Debt
+    if (income>0 && (debtNum/income) > 0.3) {
+      list.push({
+        title: "Tighten debt payments",
+        why: "Keeping minimums on autopay avoids fees; snowball what you can."
+      });
+    }
+
+    // Confidence
+    if (confidence === "Stressed") {
+      list.push({
+        title: "Talk with a counselor (free)",
+        why: "Judgment-free planning. We’ll map 2–3 small wins first."
+      });
+    }
+
+    // Product bridges (non-salesy)
+    // Use gentle, transparent language tied to needs.
+    if (saveNum < 300) {
+      list.push({
+        title: "Cash Cushion (Small-Dollar Loan)",
+        why: "Short-term option with clear terms and no prepay penalty."
+      });
+    }
+    if (debtNum > 400) {
+      list.push({
+        title: "Pathway Credit Builder",
+        why: "Build payment history at a low rate with savings as collateral."
+      });
+    }
+    if (payTiming === "uneven") {
+      list.push({
+        title: "Everyday Checking",
+        why: "Direct deposit friendly. Overdraft options explained up front."
+      });
+    }
+
+    return list.slice(0, 6);
+  },[saveNum, housing, income, housingNum, debtNum, payTiming, confidence]);
+
   return (
     <div className="grid-auto">
-      {/* Left: form */}
-      <section className="card card-pad shadow-hover">
+      {/* LEFT: Questions */}
+      <section className="card card-pad">
         <div className="stack-lg">
-          <div className="kv">
-            <div style={{display:'flex',alignItems:'center',gap:'.6rem'}}>
-              <span className="icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M4 7h16M4 12h16M4 17h10" stroke="var(--brand-blue)" strokeWidth="1.8"/>
-                </svg>
-              </span>
-              <h1 className="h2" style={{margin:0}}>Financial Checkup</h1>
+          <div className="card-head">Quick Checkup</div>
+          <div className="rule-accent"></div>
+          <p className="muted" style={{marginTop:'.6rem'}}>Plain language. No judgments. Most folks finish in under 2 minutes.</p>
+
+          {/* Q1 */}
+          <div className="stack">
+            <span className="label">1) Your pay schedule</span>
+            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
+              <Chip label="Steady" pressed={payTiming==="steady"} onClick={()=>setPayTiming("steady")} />
+              <Chip label="Uneven" pressed={payTiming==="uneven"} onClick={()=>setPayTiming("uneven")} />
             </div>
-            <span className="badge badge-ok">Private</span>
-          </div>
-          <p className="muted">A short, judgment-free snapshot. We don’t store answers here.</p>
-
-          <div className="stack">
-            <label className="label">Monthly take-home pay</label>
-            <input className="input" inputMode="decimal" placeholder="e.g. 3200"
-                   value={income} onChange={(e)=> setIncome(e.target.value === "" ? "" : Number(e.target.value))}/>
-            <span className="muted" style={{fontSize:'.9rem'}}>What lands in your account after taxes and deductions.</span>
           </div>
 
+          {/* Q2 */}
           <div className="stack">
-            <label className="label">Monthly housing payment</label>
-            <input className="input" inputMode="decimal" placeholder="Rent or mortgage"
-                   value={rent} onChange={(e)=> setRent(e.target.value === "" ? "" : Number(e.target.value))}/>
+            <span className="label">2) Monthly take-home income</span>
+            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
+              {incomeOptions.map(o=>
+                <Chip key={o} label={o} pressed={incomeRange===o} onClick={()=>setIncomeRange(o)} />
+              )}
+            </div>
           </div>
 
+          {/* Q3 */}
           <div className="stack">
-            <label className="label">Monthly debt payments (credit cards, loans)</label>
-            <input className="input" inputMode="decimal" placeholder="Total minimums due"
-                   value={debt} onChange={(e)=> setDebt(e.target.value === "" ? "" : Number(e.target.value))}/>
+            <span className="label">3) Housing</span>
+            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap',marginBottom:'.5rem'}}>
+              <Chip label="Rent" pressed={housing==="rent"} onClick={()=>setHousing("rent")} />
+              <Chip label="Own" pressed={housing==="own"} onClick={()=>setHousing("own")} />
+              <Chip label="With family" pressed={housing==="family"} onClick={()=>{setHousing("family");setHousingAmt("");}} />
+            </div>
+            {housing!=="family" && housing!==null && (
+              <input className="input" inputMode="decimal" placeholder="Monthly housing amount"
+                     value={housingAmt} onChange={(e)=>setHousingAmt(e.target.value)}/>
+            )}
           </div>
 
+          {/* Q4 */}
           <div className="stack">
-            <label className="label">Savings today</label>
-            <input className="input" inputMode="decimal" placeholder="Cash you can use if needed"
-                   value={savings} onChange={(e)=> setSavings(e.target.value === "" ? "" : Number(e.target.value))}/>
+            <span className="label">4) Monthly debt payments</span>
+            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap',marginBottom:'.5rem'}}>
+              {debtOptions.map(o=>
+                <Chip key={o} label={o} pressed={debtRange===o} onClick={()=>{setDebtRange(o);setDebtAmt("");}} />
+              )}
+            </div>
+            <input className="input" inputMode="decimal" placeholder="Or type amount"
+                   value={debtAmt} onChange={(e)=>{setDebtAmt(e.target.value);setDebtRange(null);}} />
           </div>
 
+          {/* Q5 */}
           <div className="stack">
-            <span className="label">Pay schedule</span>
-            <label className="tile"><input type="radio" name="pay" checked={payTiming==="steady"} onChange={()=>setPayTiming("steady")}/> <span>Steady (same days/amounts)</span></label>
-            <label className="tile"><input type="radio" name="pay" checked={payTiming==="uneven"} onChange={()=>setPayTiming("uneven")}/> <span>Uneven (varies week to week)</span></label>
+            <span className="label">5) Savings available today</span>
+            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap',marginBottom:'.5rem'}}>
+              {saveOptions.map(o=>
+                <Chip key={o} label={o} pressed={saveRange===o} onClick={()=>{setSaveRange(o);setSaveAmt("");}} />
+              )}
+            </div>
+            <input className="input" inputMode="decimal" placeholder="Or type amount"
+                   value={saveAmt} onChange={(e)=>{setSaveAmt(e.target.value);setSaveRange(null);}} />
           </div>
 
+          {/* Q6 */}
           <div className="stack">
-            <span className="label">Could you borrow from someone in an emergency?</span>
-            <label className="tile"><input type="radio" name="em" checked={emergency==="yes"} onChange={()=>setEmergency("yes")}/> <span>Yes</span></label>
-            <label className="tile"><input type="radio" name="em" checked={emergency==="no"} onChange={()=>setEmergency("no")}/> <span>No</span></label>
+            <span className="label">6) How does money feel right now?</span>
+            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
+              {confidenceOpts.map(o=>
+                <Chip key={o} label={o} pressed={confidence===o} onClick={()=>setConfidence(o)} />
+              )}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Right: results */}
-      <aside className="card card-pad shadow-hover">
+      {/* RIGHT: Results */}
+      <aside className="card card-pad">
         <div className="stack-lg">
-          <div className="kv">
-            <h2 className="h2" style={{margin:0}}>Your snapshot</h2>
-            <span className={`badge ${band==="Great"?"badge-ok":band==="Okay"?"badge-warn":"badge-bad"}`}>{band}</span>
-          </div>
-
-          <div className="stack-sm">
+          <div className="card-head">Your Snapshot</div>
+          <div className="stack">
             <div className="kv">
-              <strong>Score</strong>
-              <strong style={{fontSize:'2rem',color:'var(--brand-navy)'}}>{score}</strong>
+              <h2 className="h2" style={{margin:0}}>Score</h2>
+              <span className={`badge ${band==="Great"?"badge-ok":band==="Okay"?"badge-warn":"badge-bad"}`}>{band}</span>
+            </div>
+            <div className="kv" style={{alignItems:'baseline'}}>
+              <strong style={{fontSize:'2.25rem',color:'var(--brand-navy)'}}>{score}</strong>
+              <span className="muted"> / 100</span>
             </div>
             <div className="meter" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={score}>
               <span style={{width:`${score}%`}} />
             </div>
-            <p className="muted" style={{fontSize:'.92rem'}}>Higher is better. We’ll aim to gently nudge this up over time.</p>
+            <p className="muted" style={{fontSize:'.94rem'}}>We’ll aim for small, steady gains. Higher is better.</p>
           </div>
 
-          <div className="hr"></div>
+          <div className="rule-accent"></div>
 
           <div className="stack">
-            <h3 className="h3">What to do next</h3>
-            <ul className="muted" style={{paddingLeft:'1.2rem',lineHeight:'1.65'}}>
-              <li>Try to keep housing near 35% of income.</li>
-              <li>Autopay at least minimums to avoid fees.</li>
-              <li>Build a small cushion ($20–$50 per paycheck).</li>
-            </ul>
-            <a className="btn btn-subtle" href="/products">See low-cost products &amp; terms</a>
-          </div>
-
-          <div className="hr"></div>
-
-          <div className="stack">
-            <h3 className="h3">Your quick facts</h3>
+            <h3 className="h3">Quick facts</h3>
             <div className="stack-sm">
-              <div className="kv"><span className="muted">Housing ÷ Income</span><strong>{typeof income==="number" && income>0 ? Math.round((Number(rent||0)/income)*100) : 0}%</strong></div>
-              <div className="kv"><span className="muted">Debt ÷ Income</span><strong>{typeof income==="number" && income>0 ? Math.round((Number(debt||0)/income)*100) : 0}%</strong></div>
-              <div className="kv"><span className="muted">Savings ÷ Income</span><strong>{typeof income==="number" && income>0 ? Math.round((Number(savings||0)/income)*100) : 0}%</strong></div>
+              <div className="kv"><span className="muted">Income (mid-point)</span><strong>${income.toLocaleString()}</strong></div>
+              <div className="kv"><span className="muted">Housing ÷ Income</span><strong>{income>0?Math.round((Number(housingNum||0)/income)*100):0}%</strong></div>
+              <div className="kv"><span className="muted">Debt ÷ Income</span><strong>{income>0?Math.round((Number(debtNum||0)/income)*100):0}%</strong></div>
+              <div className="kv"><span className="muted">Savings ÷ Income</span><strong>{income>0?Math.round((Number(saveNum||0)/income)*100):0}%</strong></div>
             </div>
+          </div>
+
+          <div className="rule-accent"></div>
+
+          <div className="stack">
+            <h3 className="h3">Next steps (no pressure)</h3>
+            <ul style={{paddingLeft:'1.2rem',lineHeight:'1.7'}}>
+              {recs.length===0 ? <li>Looks good—keep doing what works. We’re here when you need us.</li> :
+                recs.map(r=> <li key={r.title}><strong>{r.title}.</strong> <span className="muted">{r.why}</span></li>)
+              }
+            </ul>
+            <a className="btn btn-primary" href="/products">See options &amp; terms</a>
+            <a className="btn btn-subtle" href="/learn" style={{marginLeft:'.5rem'}}>Learn more</a>
           </div>
         </div>
       </aside>
