@@ -1,4 +1,6 @@
 "use client";
+import { t } from "@/lib/i18n";
+import { useLocale } from "@/lib/i18n-client";
 import { useMemo, useState } from "react";
 
 /**
@@ -77,6 +79,7 @@ function uniquePush(arr:Rec[], item:Rec) {
 }
 
 export default function Assess() {
+  useLocale();
   const [step, setStep] = useState(0); // index into QUESTIONS
   const [answers, setAnswers] = useState<Record<string, ChipVal | number | null>>({});
 
@@ -234,7 +237,7 @@ export default function Assess() {
       {/* LEFT: Question card */}
       <section className="card card-pad">
         <div className="stack-lg">
-          <div className="card-head">Financial Wellness Check</div>
+          <div className="card-head">{t("assess.title")}</div>
           <div className="rule-accent"></div>
 
           <div className="stack">
@@ -274,10 +277,10 @@ export default function Assess() {
             <div style={{display:'flex',gap:'.5rem'}}>
               {canNext ? (
                 <button className="btn btn-primary" onClick={()=> setStep(s=> Math.min(QUESTIONS.length-1, s+1))}>
-                  Next
+                  {step === 0 ? t("assess.start") : t("assess.next")}
                 </button>
               ) : (
-                <a className="btn btn-primary" href="#results">See my results</a>
+                <a className="btn btn-primary" href="#results">{t("assess.submit")}</a>
               )}
             </div>
           </div>
@@ -287,7 +290,7 @@ export default function Assess() {
       {/* RIGHT: Results */}
       <aside id="results" className="card card-pad">
         <div className="stack-lg">
-          <div className="card-head">Your Snapshot</div>
+          <div className="card-head">{t("assess.result.title")}</div>
 
           <div className="stack">
             <div className="kv">
@@ -317,7 +320,7 @@ export default function Assess() {
             </ul>
 
             <div style={{display:'flex',flexWrap:'wrap',gap:'.5rem'}}>
-              <a className="btn btn-primary" href="/products">See options &amp; terms</a>
+              <a className="btn btn-primary" href="/products">{t("assess.result.cta")}</a>
               <a className="btn btn-subtle" href="/learn">Learn more</a>
             </div>
           </div>
