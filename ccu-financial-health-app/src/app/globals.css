@@ -3,22 +3,21 @@
 @tailwind utilities;
 
 :root{
-  --ink:#0b2e4e;          /* deep navy text */
-  --ink-2:#335e7e;        /* secondary text */
-  --accent:#2e6d8a;       /* connections blue */
-  --accent-700:#25566d;   /* darker hover */
-  --bg:#f4f8fd;           /* soft backdrop */
-  --card:#ffffff;         /* card surface */
-  --line:#e3edf6;         /* borders */
-  --ring:#9cc6da;         /* focus ring */
+  --ink:#0b2e4e;
+  --ink-2:#3a5c76;
+  --accent:#2e6d8a;
+  --accent-700:#25566d;
+  --bg:#f4f8fd;
+  --card:#ffffff;
+  --line:#e3edf6;
+  --ring:#9cc6da;
 }
 
 html,body{height:100%}
 body{
   color:var(--ink);
-  background:linear-gradient(180deg,var(--bg),#fff 55%,var(--bg));
+  background:linear-gradient(180deg,var(--bg),#fff 60%,var(--bg));
   font-feature-settings:"liga" 1,"calt" 1;
 }
-
-*{scroll-behavior:smooth}
 ::selection{background:var(--accent);color:white}
+*{scroll-behavior:smooth}

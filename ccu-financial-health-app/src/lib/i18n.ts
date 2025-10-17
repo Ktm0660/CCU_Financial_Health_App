@@ -13,13 +13,13 @@ const en: Dict = {
   "cta.start": "Start your 3-minute checkup",
   "products.title": "Products & Services",
   "products.card.learn": "Learn more",
-  "assess.title": "Quick Wellness Check",
-  "assess.start": "Begin",
+  "assess.title": "Financial Checkup",
+  "assess.start": "Start",
   "assess.next": "Next",
-  "assess.submit": "See my plan",
+  "assess.submit": "See my results",
   "assess.result.title": "Your Starting Point",
   "assess.result.cta": "See suggested steps",
-  "footer.rights": "All rights reserved."
+  "footer.rights": "All rights reserved.",
 };
 
 const es: Dict = {
@@ -34,13 +34,13 @@ const es: Dict = {
   "cta.start": "Comienza tu revisión de 3 minutos",
   "products.title": "Productos y Servicios",
   "products.card.learn": "Más información",
-  "assess.title": "Chequeo Rápido",
+  "assess.title": "Chequeo financiero",
   "assess.start": "Comenzar",
   "assess.next": "Siguiente",
-  "assess.submit": "Ver mi plan",
+  "assess.submit": "Ver mis resultados",
   "assess.result.title": "Tu Punto de Partida",
   "assess.result.cta": "Ver pasos sugeridos",
-  "footer.rights": "Todos los derechos reservados."
+  "footer.rights": "Todos los derechos reservados.",
 };
 
 let current: Locale = "en";

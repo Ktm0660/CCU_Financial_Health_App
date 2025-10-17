@@ -3,9 +3,9 @@ import type { Config } from 'tailwindcss'
 
 const config: Config = {
   content: [
-    './src/app/**/*.{ts,tsx}',
-    './src/components/**/*.{ts,tsx}',
-    './src/lib/**/*.{ts,tsx}',
+    './src/app/**/*.{ts,tsx,js,jsx}',
+    './src/components/**/*.{ts,tsx,js,jsx}',
+    './src/lib/**/*.{ts,tsx,js,jsx}',
   ],
   theme: {
     extend: {
@@ -29,7 +29,7 @@ const config: Config = {
         xl: '14px',
       },
       maxWidth: {
-        'pro': '1120px',
+        pro: '1120px',
       },
     },
   },
