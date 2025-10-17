@@ -1,43 +1,45 @@
+import forms from "@tailwindcss/forms";
+import typography from "@tailwindcss/typography";
 import type { Config } from "tailwindcss";
+
 const config: Config = {
   content: [
-    "./src/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
+    "./src/app/**/*.{ts,tsx}",
+    "./src/components/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}"
   ],
   theme: {
     extend: {
       colors: {
         brand: {
-          navy: "#0D3554",
-          blue: "#0B66C3",
-          sky: "#E9F3FA",
-          mist: "#F6FAFD",
-          gradientStart: "#1F63B6",
-          gradientEnd: "#27B0C7",
-          accent: "#0E7DB6",
-          light: "#F6F9FC",
-          ink: "#0F172A",
-          gray: "#64748B",
-          success: "#0E9F6E",
-          warn: "#D97706",
-          danger: "#DC2626",
+          50:  "#f3f7fb",
+          100: "#e6eef7",
+          200: "#cfe0f0",
+          300: "#a8c7e4",
+          400: "#78a8d6",
+          500: "#3f84c5",
+          600: "#2f6aa5",
+          700: "#255382",
+          800: "#1e446a",
+          900: "#173653"
         },
+        accent: {
+          500: "#1fb6ff"
+        }
+      },
+      fontFamily: {
+        serif: ['"Georgia"', 'ui-serif', 'serif'],
+        sans: ['"Inter"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        soft: "0 6px 24px rgba(13,53,84,0.08)",
-        card: "0 8px 30px rgba(13,53,84,0.10)",
+        card: "0 6px 24px rgba(18, 62, 105, 0.08)",
       },
       borderRadius: {
-        xl: "1.25rem",
-        "2xl": "1.75rem",
-      },
-      fontSize: {
-        display: ["2rem", { lineHeight: "1.15", letterSpacing: "-0.01em" }],
-        eyebrow: ["0.75rem", { letterSpacing: "0.06em", fontWeight: "600" }],
+        xl: "16px",
       },
     },
   },
-  plugins: [],
-};
-export default config;
+  plugins: [typography, forms],
+}
+
+export default config
