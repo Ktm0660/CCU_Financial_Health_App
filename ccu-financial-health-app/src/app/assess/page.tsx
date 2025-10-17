@@ -2,16 +2,66 @@
 import { useMemo, useState } from "react";
 
 /**
- * New super-simple 6-question flow.
- * 1) Pay timing: steady / uneven
- * 2) Income range (tap chip)
- * 3) Housing type (rent / own / with family) + quick amount if rent/own
- * 4) Monthly debt payments (chip or number)
- * 5) Savings today (chip or number)
- * 6) Confidence / stress (chip)
+ * Connections CU · Simple 15-Question Assessment
+ * Designed for rural & first-time bank users:
+ * - One screen per question with big tappable chips
+ * - Zero jargon; plain language; minimal typing
+ * - Score 0–100 with category weights
+ * - Gentle, transparent recommendations (not salesy)
  *
- * Score = weighted blend (0–100). Recs map to answers with plain-language reasons.
+ * Categories & weights:
+ * 1) Access & Basics (checking, direct deposit, ID/eligibility proxy) ........ 25
+ * 2) Safety Net & Bills (emergency cash, current on housing/utilities) ....... 30
+ * 3) Stability (transportation, phone/internet, income timing) ............... 20
+ * 4) Obligations & Risk (payday/title loan, collections, debt stress) ........ 15
+ * 5) Confidence & Support (comfort reading statements, counselor opt-in) ..... 10
  */
+
+type ChipVal = string;
+
+type Q = {
+  id: string;
+  label: string;
+  help?: string;
+  kind: "chips" | "number";
+  options?: ChipVal[]; // for chips
+  optional?: boolean;
+};
+
+const QUESTIONS: Q[] = [
+  { id:"q1_checking", label:"Do you have a checking account right now?", kind:"chips", options:["Yes","No","Not sure"] },
+  { id:"q2_deposit", label:"Do you use direct deposit for income?", kind:"chips", options:["Yes","No","Sometimes"] },
+  { id:"q3_liquidity", label:"If you needed cash today, about how much could you use?", kind:"chips", options:["None","$1–$100","$100–$500",">$500"] },
+  { id:"q4_housing_current", label:"Are you current on rent or mortgage?", kind:"chips", options:["Yes","No","Not applicable"] },
+  { id:"q5_utils_current", label:"Are you current on utilities/phone?", kind:"chips", options:["Yes","No"] },
+  { id:"q6_highcost", label:"Do you have a payday/title/online loan right now?", kind:"chips", options:["Yes","No"] },
+  { id:"q7_collections", label:"Is anything in collections?", kind:"chips", options:["Yes","No","Not sure"] },
+  { id:"q8_transport", label:"Is your transportation reliable most weeks?", kind:"chips", options:["Yes","No"] },
+  { id:"q9_connectivity", label:"Is your phone or internet reliable most weeks?", kind:"chips", options:["Yes","No"] },
+  { id:"q10_income_timing", label:"Is your income timing steady most months?", kind:"chips", options:["Steady","Varies"] },
+  { id:"q11_set_aside", label:"Could you set aside at least $20 each paycheck?", kind:"chips", options:["Yes","Some months","No"] },
+  { id:"q12_comfort", label:"Reading statements/fees feels…", kind:"chips", options:["Comfortable","I need help"] },
+  { id:"q13_language", label:"Preferred language for materials", kind:"chips", options:["English","Español"] },
+  { id:"q14_priority", label:"Which is your top priority?", kind:"chips", options:["Build savings","Lower debt","Credit score","Car","Home","Just learn"] },
+  { id:"q15_counselor", label:"Would you like a counselor to reach out (free)?", kind:"chips", options:["Yes","No"] },
+];
+
+// UI bits
+function Chip({label, pressed, onClick}:{label:string; pressed:boolean; onClick:()=>void}) {
+  return (
+    <button type="button" className="btn-chip" aria-pressed={pressed} onClick={onClick}>
+      {label}
+    </button>
+  );
+}
+
+function Meter({value}:{value:number}) {
+  return (
+    <div className="meter" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={value}>
+      <span style={{width:`${value}%`}} />
+    </div>
+  );
+}
 
 type Band = "Great" | "Okay" | "Needs attention";
 function bandFor(score:number): Band {
@@ -20,222 +70,214 @@ function bandFor(score:number): Band {
   return "Needs attention";
 }
 
-function Chip({label, pressed, onClick}:{label:string; pressed:boolean; onClick:()=>void}) {
-  return <button type="button" className="btn-chip" aria-pressed={pressed} onClick={onClick}>{label}</button>;
+// Recommendation helper
+type Rec = { title:string; why:string };
+function uniquePush(arr:Rec[], item:Rec) {
+  if (!arr.find(x=>x.title===item.title)) arr.push(item);
 }
 
 export default function Assess() {
-  // Q1 Pay timing
-  const [payTiming, setPayTiming] = useState<"steady" | "uneven">("steady");
+  const [step, setStep] = useState(0); // index into QUESTIONS
+  const [answers, setAnswers] = useState<Record<string, ChipVal | number | null>>({});
 
-  // Q2 Income range (monthly take-home)
-  const incomeOptions = ["< $2k","$2k–$3k","$3k–$4k","$4k–$6k",">$6k"] as const;
-  type IncomeOpt = typeof incomeOptions[number];
-  const [incomeRange, setIncomeRange] = useState<IncomeOpt | null>(null);
-  const incomeMid = useMemo(()=>({
-    "< $2k":1500, "$2k–$3k":2500, "$3k–$4k":3500, "$4k–$6k":5000, ">$6k":7000
-  } as Record<IncomeOpt, number>),[]);
+  const q = QUESTIONS[step];
 
-  // Q3 Housing
-  const [housing, setHousing] = useState<"rent"|"own"|"family"|null>(null);
-  const [housingAmt, setHousingAmt] = useState<string>(""); // optional
+  function setAnswer(id:string, val:ChipVal | number) {
+    setAnswers(prev => ({...prev, [id]: val}));
+  }
 
-  // Q4 Debt payments
-  const debtOptions = ["$0–$100","$100–$300","$300–$600",">$600"] as const;
-  type DebtOpt = typeof debtOptions[number];
-  const [debtRange, setDebtRange] = useState<DebtOpt | null>(null);
-  const [debtAmt, setDebtAmt] = useState<string>(""); // optional manual
+  const progressPct = Math.round(((step) / QUESTIONS.length) * 100);
 
-  // Q5 Savings
-  const saveOptions = ["$0","$1–$500","$500–$2k",">$2k"] as const;
-  type SaveOpt = typeof saveOptions[number];
-  const [saveRange, setSaveRange] = useState<SaveOpt | null>(null);
-  const [saveAmt, setSaveAmt] = useState<string>("");
+  // Compute score
+  const { score, band, recs } = useMemo(()=>{
+    let pts = 0;
 
-  // Q6 Confidence (self-report)
-  const confidenceOpts = ["Calm","Managing","Stressed"] as const;
-  type ConfOpt = typeof confidenceOpts[number];
-  const [confidence, setConfidence] = useState<ConfOpt | null>(null);
+    // Access & Basics (25)
+    // q1_checking, q2_deposit, q13_language (no score), proxy trust via comfort later
+    if (answers["q1_checking"] === "Yes") pts += 12;
+    if (answers["q2_deposit"] === "Yes") pts += 10;
+    if (answers["q2_deposit"] === "Sometimes") pts += 5;
 
-  // Numeric rollups
-  const income = incomeRange ? incomeMid[incomeRange] : 0;
-  const housingNum = Number(housingAmt || 0);
-  const debtNum = debtRange ? (
-    debtRange==="$0–$100"?100:
-    debtRange==="$100–$300"?300:
-    debtRange==="$300–$600"?600:800
-  ) : Number(debtAmt || 0);
-  const saveNum = saveRange ? (
-    saveRange==="$0"?0:
-    saveRange==="$1–$500"?500:
-    saveRange==="$500–$2k"?2000:4000
-  ) : Number(saveAmt || 0);
+    // Safety Net & Bills (30)
+    // q3_liquidity
+    const liq = answers["q3_liquidity"];
+    if (liq === ">$500") pts += 12;
+    else if (liq === "$100–$500") pts += 9;
+    else if (liq === "$1–$100") pts += 4;
+    // q4_housing_current
+    if (answers["q4_housing_current"] === "Yes") pts += 9;
+    // q5_utils_current
+    if (answers["q5_utils_current"] === "Yes") pts += 9;
 
-  // Score
-  const score = useMemo(()=>{
-    let raw = 0;
-    // Housing affordability (35% target)
-    if (housing === "family") {
-      raw += 28;
-    } else if (income > 0) {
-      const h = housingNum;
-      const pct = (h / income) * 100;
-      raw += Math.max(0, 35 - Math.min(100, pct)); // 0..35
+    // Stability (20)
+    if (answers["q8_transport"] === "Yes") pts += 7;
+    if (answers["q9_connectivity"] === "Yes") pts += 7;
+    if (answers["q10_income_timing"] === "Steady") pts += 6;
+
+    // Obligations & Risk (15) – subtractors
+    if (answers["q6_highcost"] === "Yes") pts -= 8;
+    const coll = answers["q7_collections"];
+    if (coll === "Yes") pts -= 7;
+    if (coll === "Not sure") pts -= 3;
+
+    // Confidence & Support (10)
+    if (answers["q11_set_aside"] === "Yes") pts += 6;
+    if (answers["q11_set_aside"] === "Some months") pts += 3;
+    if (answers["q12_comfort"] === "Comfortable") pts += 4;
+
+    // Clamp & band
+    const s = Math.max(0, Math.min(100, pts));
+    const b = bandFor(s);
+
+    // Recommendations (gentle, need-based)
+    const rs: Rec[] = [];
+
+    // Basics / Access
+    if (answers["q1_checking"] !== "Yes") {
+      uniquePush(rs, {
+        title: "Open Everyday Checking",
+        why: "No surprise fees and direct deposit friendly. We’ll explain terms up front."
+      });
     }
-
-    // Debt load (30% target of income)
-    if (income > 0) {
-      const pct = (debtNum / income) * 100;
-      raw += Math.max(0, 30 - Math.min(100, pct)); // 0..30
-    }
-
-    // Savings cushion (0..30 scaled vs income)
-    if (income > 0) {
-      raw += Math.min(30, (saveNum / income) * 100);
-    }
-
-    // Stability bonuses (5 total)
-    if (payTiming === "steady") raw += 3;
-    if (confidence === "Calm") raw += 2;
-    if (confidence === "Managing") raw += 1;
-
-    return Math.max(0, Math.min(100, Math.round(raw)));
-  },[housing, housingNum, income, debtNum, saveNum, payTiming, confidence]);
-
-  const band = bandFor(score);
-
-  // Recommendations (plain language + gentle suggestions)
-  const recs = useMemo(()=>{
-    const list: {title:string; why:string}[] = [];
-
-    // Liquidity
-    if (saveNum < 300) {
-      list.push({
-        title: "Build a small cash cushion",
-        why: "A little buffer ($20–$50 per paycheck) reduces fees and stress."
+    if (answers["q2_deposit"] !== "Yes") {
+      uniquePush(rs, {
+        title: "Set up Direct Deposit",
+        why: "Faster access to pay and fewer check-cashing fees."
       });
     }
 
-    // Housing
-    if (housing !== "family" && income>0 && (housingNum/income) > 0.4) {
-      list.push({
-        title: "Lower housing costs over time",
-        why: "Aim near 35% of take-home pay. We can brainstorm steps together."
+    // Safety net
+    if (liq === "None" || liq === "$1–$100") {
+      uniquePush(rs, {
+        title: "Start a $20 Cushion",
+        why: "Save $20 per paycheck to reach $200–$300 quickly and avoid fees."
       });
-    }
-
-    // Debt
-    if (income>0 && (debtNum/income) > 0.3) {
-      list.push({
-        title: "Tighten debt payments",
-        why: "Keeping minimums on autopay avoids fees; snowball what you can."
-      });
-    }
-
-    // Confidence
-    if (confidence === "Stressed") {
-      list.push({
-        title: "Talk with a counselor (free)",
-        why: "Judgment-free planning. We’ll map 2–3 small wins first."
-      });
-    }
-
-    // Product bridges (non-salesy)
-    // Use gentle, transparent language tied to needs.
-    if (saveNum < 300) {
-      list.push({
+      uniquePush(rs, {
         title: "Cash Cushion (Small-Dollar Loan)",
-        why: "Short-term option with clear terms and no prepay penalty."
-      });
-    }
-    if (debtNum > 400) {
-      list.push({
-        title: "Pathway Credit Builder",
-        why: "Build payment history at a low rate with savings as collateral."
-      });
-    }
-    if (payTiming === "uneven") {
-      list.push({
-        title: "Everyday Checking",
-        why: "Direct deposit friendly. Overdraft options explained up front."
+        why: "Short-term bridge with clear terms and no prepayment penalty."
       });
     }
 
-    return list.slice(0, 6);
-  },[saveNum, housing, income, housingNum, debtNum, payTiming, confidence]);
+    // Bills behind
+    if (answers["q4_housing_current"] === "No" || answers["q5_utils_current"] === "No") {
+      uniquePush(rs, {
+        title: "Payment Plan & Hardship Review",
+        why: "We’ll call providers together and build a catch-up plan that fits your budget."
+      });
+    }
+
+    // High-cost obligations
+    if (answers["q6_highcost"] === "Yes") {
+      uniquePush(rs, {
+        title: "Relief Refinance / Pay-down Plan",
+        why: "Replace high-cost debt with a lower, fixed payment and a clear payoff date."
+      });
+    }
+
+    // Collections or unsure
+    if (answers["q7_collections"] === "Yes" || answers["q7_collections"] === "Not sure") {
+      uniquePush(rs, {
+        title: "Credit Report Check",
+        why: "We’ll pull free reports and make a step-by-step plan to settle or dispute."
+      });
+      uniquePush(rs, {
+        title: "Pathway Credit Builder",
+        why: "Build positive history using a small secured installment—savings stays yours."
+      });
+    }
+
+    // Stability helpers
+    if (answers["q8_transport"] === "No") {
+      uniquePush(rs, {
+        title: "Reliable Wheels Plan",
+        why: "Budget for repairs or find an affordable auto—terms explained clearly."
+      });
+    }
+    if (answers["q9_connectivity"] === "No") {
+      uniquePush(rs, {
+        title: "Low-Cost Connectivity Tips",
+        why: "Free Wi-Fi spots, assistance programs, and phone plans we see work well."
+      });
+    }
+
+    // Set-aside and comfort
+    if (answers["q11_set_aside"] === "No" || answers["q12_comfort"] === "I need help") {
+      uniquePush(rs, {
+        title: "15-Minute Budget Setup",
+        why: "We’ll map bills to paydays and auto-save a few dollars without stress."
+      });
+    }
+
+    // Language & counselor
+    if (answers["q13_language"] === "Español") {
+      uniquePush(rs, {
+        title: "Recursos en Español",
+        why: "Guías simples, ejemplos y apoyo en tu idioma."
+      });
+    }
+    if (answers["q15_counselor"] === "Yes") {
+      uniquePush(rs, {
+        title: "Meet a Certified Counselor",
+        why: "Free and judgment-free. We focus on 2–3 small wins you choose."
+      });
+    }
+
+    return { score: s, band: b, recs: rs.slice(0, 7) };
+  }, [answers]);
+
+  // Navigation
+  const canNext = step < QUESTIONS.length - 1;
+  const canBack = step > 0;
 
   return (
     <div className="grid-auto">
-      {/* LEFT: Questions */}
+      {/* LEFT: Question card */}
       <section className="card card-pad">
         <div className="stack-lg">
-          <div className="card-head">Quick Checkup</div>
+          <div className="card-head">Financial Wellness Check</div>
           <div className="rule-accent"></div>
-          <p className="muted" style={{marginTop:'.6rem'}}>Plain language. No judgments. Most folks finish in under 2 minutes.</p>
 
-          {/* Q1 */}
           <div className="stack">
-            <span className="label">1) Your pay schedule</span>
-            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
-              <Chip label="Steady" pressed={payTiming==="steady"} onClick={()=>setPayTiming("steady")} />
-              <Chip label="Uneven" pressed={payTiming==="uneven"} onClick={()=>setPayTiming("uneven")} />
+            <div className="kv">
+              <span className="muted">Step {step+1} of {QUESTIONS.length}</span>
+              <span className="muted">{progressPct}%</span>
             </div>
+            <Meter value={progressPct} />
           </div>
 
-          {/* Q2 */}
           <div className="stack">
-            <span className="label">2) Monthly take-home income</span>
-            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
-              {incomeOptions.map(o=>
-                <Chip key={o} label={o} pressed={incomeRange===o} onClick={()=>setIncomeRange(o)} />
-              )}
-            </div>
-          </div>
+            <h2 className="h2" style={{marginBottom:'.25rem'}}>{q.label}</h2>
+            {q.help ? <p className="muted" style={{marginTop:0}}>{q.help}</p> : null}
 
-          {/* Q3 */}
-          <div className="stack">
-            <span className="label">3) Housing</span>
-            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap',marginBottom:'.5rem'}}>
-              <Chip label="Rent" pressed={housing==="rent"} onClick={()=>setHousing("rent")} />
-              <Chip label="Own" pressed={housing==="own"} onClick={()=>setHousing("own")} />
-              <Chip label="With family" pressed={housing==="family"} onClick={()=>{setHousing("family");setHousingAmt("");}} />
-            </div>
-            {housing!=="family" && housing!==null && (
-              <input className="input" inputMode="decimal" placeholder="Monthly housing amount"
-                     value={housingAmt} onChange={(e)=>setHousingAmt(e.target.value)}/>
+            {q.kind === "chips" && (
+              <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap',marginTop:'.5rem'}}>
+                {(q.options||[]).map(opt=>{
+                  const pressed = answers[q.id] === opt;
+                  return <Chip key={opt} label={opt} pressed={!!pressed} onClick={()=>setAnswer(q.id, opt)} />;
+                })}
+              </div>
+            )}
+
+            {q.kind === "number" && (
+              <input
+                className="input"
+                inputMode="decimal"
+                placeholder="Type an amount"
+                value={(answers[q.id] as number | "" | undefined) ?? ""}
+                onChange={(e)=>setAnswer(q.id, Number(e.target.value || 0))}
+              />
             )}
           </div>
 
-          {/* Q4 */}
-          <div className="stack">
-            <span className="label">4) Monthly debt payments</span>
-            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap',marginBottom:'.5rem'}}>
-              {debtOptions.map(o=>
-                <Chip key={o} label={o} pressed={debtRange===o} onClick={()=>{setDebtRange(o);setDebtAmt("");}} />
-              )}
-            </div>
-            <input className="input" inputMode="decimal" placeholder="Or type amount"
-                   value={debtAmt} onChange={(e)=>{setDebtAmt(e.target.value);setDebtRange(null);}} />
-          </div>
-
-          {/* Q5 */}
-          <div className="stack">
-            <span className="label">5) Savings available today</span>
-            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap',marginBottom:'.5rem'}}>
-              {saveOptions.map(o=>
-                <Chip key={o} label={o} pressed={saveRange===o} onClick={()=>{setSaveRange(o);setSaveAmt("");}} />
-              )}
-            </div>
-            <input className="input" inputMode="decimal" placeholder="Or type amount"
-                   value={saveAmt} onChange={(e)=>{setSaveAmt(e.target.value);setSaveRange(null);}} />
-          </div>
-
-          {/* Q6 */}
-          <div className="stack">
-            <span className="label">6) How does money feel right now?</span>
-            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
-              {confidenceOpts.map(o=>
-                <Chip key={o} label={o} pressed={confidence===o} onClick={()=>setConfidence(o)} />
+          <div className="kv" style={{marginTop:'1.25rem'}}>
+            <button className="btn btn-subtle" onClick={()=> setStep(s=> Math.max(0, s-1))} disabled={!canBack}>Back</button>
+            <div style={{display:'flex',gap:'.5rem'}}>
+              {canNext ? (
+                <button className="btn btn-primary" onClick={()=> setStep(s=> Math.min(QUESTIONS.length-1, s+1))}>
+                  Next
+                </button>
+              ) : (
+                <a className="btn btn-primary" href="#results">See my results</a>
               )}
             </div>
           </div>
@@ -243,34 +285,23 @@ export default function Assess() {
       </section>
 
       {/* RIGHT: Results */}
-      <aside className="card card-pad">
+      <aside id="results" className="card card-pad">
         <div className="stack-lg">
           <div className="card-head">Your Snapshot</div>
+
           <div className="stack">
             <div className="kv">
-              <h2 className="h2" style={{margin:0}}>Score</h2>
+              <h3 className="h2" style={{margin:0}}>Score</h3>
               <span className={`badge ${band==="Great"?"badge-ok":band==="Okay"?"badge-warn":"badge-bad"}`}>{band}</span>
             </div>
             <div className="kv" style={{alignItems:'baseline'}}>
               <strong style={{fontSize:'2.25rem',color:'var(--brand-navy)'}}>{score}</strong>
               <span className="muted"> / 100</span>
             </div>
-            <div className="meter" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={score}>
-              <span style={{width:`${score}%`}} />
-            </div>
-            <p className="muted" style={{fontSize:'.94rem'}}>We’ll aim for small, steady gains. Higher is better.</p>
-          </div>
-
-          <div className="rule-accent"></div>
-
-          <div className="stack">
-            <h3 className="h3">Quick facts</h3>
-            <div className="stack-sm">
-              <div className="kv"><span className="muted">Income (mid-point)</span><strong>${income.toLocaleString()}</strong></div>
-              <div className="kv"><span className="muted">Housing ÷ Income</span><strong>{income>0?Math.round((Number(housingNum||0)/income)*100):0}%</strong></div>
-              <div className="kv"><span className="muted">Debt ÷ Income</span><strong>{income>0?Math.round((Number(debtNum||0)/income)*100):0}%</strong></div>
-              <div className="kv"><span className="muted">Savings ÷ Income</span><strong>{income>0?Math.round((Number(saveNum||0)/income)*100):0}%</strong></div>
-            </div>
+            <Meter value={score} />
+            <p className="muted" style={{fontSize:'.94rem'}}>
+              Higher is better. We’ll aim for steady gains with small, doable steps.
+            </p>
           </div>
 
           <div className="rule-accent"></div>
@@ -278,12 +309,31 @@ export default function Assess() {
           <div className="stack">
             <h3 className="h3">Next steps (no pressure)</h3>
             <ul style={{paddingLeft:'1.2rem',lineHeight:'1.7'}}>
-              {recs.length===0 ? <li>Looks good—keep doing what works. We’re here when you need us.</li> :
+              {recs.length===0 ? (
+                <li>You’re in a good spot. Keep going—we’re here when you need us.</li>
+              ) : (
                 recs.map(r=> <li key={r.title}><strong>{r.title}.</strong> <span className="muted">{r.why}</span></li>)
-              }
+              )}
             </ul>
-            <a className="btn btn-primary" href="/products">See options &amp; terms</a>
-            <a className="btn btn-subtle" href="/learn" style={{marginLeft:'.5rem'}}>Learn more</a>
+
+            <div style={{display:'flex',flexWrap:'wrap',gap:'.5rem'}}>
+              <a className="btn btn-primary" href="/products">See options &amp; terms</a>
+              <a className="btn btn-subtle" href="/learn">Learn more</a>
+            </div>
+          </div>
+
+          <div className="rule-accent"></div>
+
+          <div className="stack">
+            <h3 className="h3">Your choices</h3>
+            <div className="stack-sm">
+              {QUESTIONS.map(q => (
+                <div key={q.id} className="kv">
+                  <span className="muted">{q.label}</span>
+                  <strong>{answers[q.id] ? String(answers[q.id]) : "—"}</strong>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </aside>
