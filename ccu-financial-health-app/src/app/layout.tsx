@@ -14,11 +14,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   const LangToggle = <LanguageToggle />;
   return (
     <html lang="en">
-      <body>
+      <body className="bg-transparent">
         <Nav langToggle={LangToggle} />
-        <main className="mx-auto max-w-2xl lg:max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
-          {children}
-        </main>
+        <main className="py-8 sm:py-12 space-y-12">{children}</main>
         <Footer />
       </body>
     </html>
