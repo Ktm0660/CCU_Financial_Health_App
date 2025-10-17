@@ -11,25 +11,23 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          navy: '#0A2A4A',
-          blue: '#1E4976',
-          gold: '#C9A227',
-          sky: '#E9F2FA',
-          sand: '#F6F2E7',
-          ink: '#1B1F23',
-          stone: 'rgba(27,31,35,0.6)',
+          navy: '#16324F',
+          blue: '#1B4E7A',
+          teal: '#2A9CA9',
+          sky: '#EAF2F8',
+          mist: '#F5F7FA',
+          ink: '#0D1B2A',
           card: '#FFFFFF',
+          ring: '#C8D6E5',
         },
       },
       boxShadow: {
-        card: '0 4px 18px rgba(10, 42, 74, 0.08)',
-        focus: '0 0 0 3px rgba(201,162,39,0.35)',
+        card: '0 8px 28px rgba(16,24,40,0.08)',
+        focus: '0 0 0 3px rgba(42,156,169,0.35)',
       },
       borderRadius: {
-        xl: '14px',
-      },
-      maxWidth: {
-        'pro': '1120px',
+        xl: '16px',
+        '2xl': '20px',
       },
     },
   },
