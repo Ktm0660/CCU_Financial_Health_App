@@ -2,33 +2,35 @@ import "./globals.css";
 import Link from "next/link";
 import { ReactNode } from "react";
 import { Container } from "@/components/ui";
-import HeaderNav from "@/components/HeaderNav";
+import LanguageToggle from "@/components/LanguageToggle";
 import { t } from "@/lib/i18n";
 
-export const metadata = { title: "Connections Financial Wellness", description: "Feel confident with your money." };
+export const metadata={title:"Connections Financial Wellness",description:"Simple steps, caring guidance."};
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({children}:{children:ReactNode}){
   return (
     <html lang="en">
-      <body className="min-h-screen text-[#0B2E4E]">
-        {/* Soft brand gradient background */}
-        <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#F5F9FF] via-white to-[#F5F9FF]" />
-        {/* Top accent bar */}
-        <div className="h-1 w-full bg-[#2E6D8A]" />
-        <header className="sticky top-0 z-50 border-b border-[#E6EEF7] bg-white/90 backdrop-blur">
+      <body className="min-h-screen">
+        {/* top bar */}
+        <div className="h-1 w-full bg-[var(--accent)]" />
+        <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-white/90 backdrop-blur">
           <Container className="flex items-center justify-between py-3">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="inline-block h-8 w-8 rounded-md bg-[#2E6D8A]" />
+            <Link href="/" className="flex items-center gap-3">
+              <span className="inline-block h-8 w-8 rounded-md bg-[var(--accent)]" />
               <span className="text-base font-semibold tracking-tight">Connections Credit Union</span>
             </Link>
-            <HeaderNav />
+            <nav className="flex items-center gap-6 text-sm">
+              <Link className="hover:underline" href="/">{t("nav.home")}</Link>
+              <Link className="hover:underline" href="/assess">{t("nav.assess")}</Link>
+              <Link className="hover:underline" href="/products">{t("nav.products")}</Link>
+              <Link className="hover:underline" href="/resources">{t("nav.resources")}</Link>
+              <LanguageToggle/>
+            </nav>
           </Container>
         </header>
-        <main>
-          <Container className="py-8">{children}</Container>
-        </main>
-        <footer className="mt-16 border-t border-[#E6EEF7] bg-white/90">
-          <Container className="py-8 text-sm text-[#335E7E]">
+        <main><Container className="py-10">{children}</Container></main>
+        <footer className="mt-16 border-t border-[var(--line)] bg-white/90">
+          <Container className="py-8 text-sm text-[var(--sub)]">
             © {new Date().getFullYear()} Connections Credit Union — {t("footer.rights")}
           </Container>
         </footer>

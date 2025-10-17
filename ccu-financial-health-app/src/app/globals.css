@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
-  height: 100%;
+/* Brand tokens (no theme() usage) */
+:root{
+  --ink:#0B2E4E;          /* primary text */
+  --accent:#2E6D8A;       /* links & primary buttons */
+  --accent-700:#25566D;   /* hover */
+  --sub:#335E7E;          /* secondary text */
+  --bg-soft:#F6FAFF;      /* page background */
+  --card:#FFFFFF;         /* cards */
+  --line:#E6EEF7;         /* borders */
+  --ring:#9CC6DA;         /* focus ring */
 }
+
+html,body{height:100%}
+body{color:var(--ink); background:linear-gradient(180deg,var(--bg-soft),#fff 40%,var(--bg-soft));}
+
+a{color:inherit}
