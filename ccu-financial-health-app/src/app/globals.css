@@ -1,24 +1,20 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root{
-  --ink:#0b2e4e;          /* deep navy */
-  --ink-2:#2a4d68;        /* secondary */
-  --accent:#2e6d8a;       /* teal/blue */
-  --accent-700:#25566d;   /* darker teal */
-  --bg:#f5f9fc;           /* soft light */
-  --card:#ffffff;         /* white card */
-  --line:#e5edf5;         /* subtle border */
+/* === Restore Tailwind v3-style slate color palette for Tailwind v4 === */
+@theme {
+  --color-slate-50:  #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
 }
-html,body{height:100%}
-body{
-  color:var(--ink);
-  background:
-    radial-gradient(1100px 500px at 85% -10%, rgba(46,109,138,.08), transparent 60%),
-    radial-gradient(900px 400px at -10% 15%, rgba(11,46,78,.06), transparent 55%),
-    linear-gradient(180deg,var(--bg),#ffffff 70%, var(--bg));
-  font-feature-settings:"liga" 1,"calt" 1;
+
+/* Optional global body style */
+body {
+  @apply text-slate-800 bg-white antialiased;
 }
-::selection{background:var(--accent);color:#fff}
-*{scroll-behavior:smooth}
