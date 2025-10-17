@@ -1,33 +1,34 @@
-import type { Config } from "tailwindcss";
+import type { Config } from 'tailwindcss'
+
 const config: Config = {
   content: [
-    "./src/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
+    './src/app/**/*.{ts,tsx}',
+    './src/components/**/*.{ts,tsx}',
+    './src/lib/**/*.{ts,tsx}',
   ],
   theme: {
     extend: {
       colors: {
         brand: {
-          navy: "#0B2E4E",
-          blue: "#1565C0",
-          light: "#F6F9FC",
-          ink: "#0F172A",
-          gray: "#64748B",
-          success: "#0E9F6E",
-          warn: "#D97706",
-          danger: "#DC2626",
+          navy: '#0A2A4A',
+          blue: '#1E4976',
+          gold: '#C9A227',
+          sky: '#E9F2FA',
+          sand: '#F6F2E7',
+          ink: '#1B1F23',
+          stone: 'rgba(27,31,35,0.6)',
+          card: '#FFFFFF',
         },
       },
       boxShadow: {
-        card: "0 8px 30px rgba(2, 18, 46, 0.08)",
+        card: '0 4px 18px rgba(10, 42, 74, 0.08)',
+        focus: '0 0 0 3px rgba(201,162,39,0.35)',
       },
       borderRadius: {
-        xl: "16px",
-        "2xl": "22px",
+        xl: '14px',
       },
     },
   },
   plugins: [],
-};
-export default config;
+}
+export default config

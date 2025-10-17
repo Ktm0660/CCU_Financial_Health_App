@@ -1,56 +1,70 @@
 export type Product = {
-  id: string;
-  name: string;
-  summary: string;
-  whyItHelps: string;
-  fees?: string;
-  aprRange?: string;
-  eligibility?: string[];
-  tags: string[]; // match assessment tags
-};
+  id: string
+  name: string
+  category: 'Checking' | 'Savings' | 'Loans' | 'Cards' | 'Services'
+  description: string
+  url: string
+  highlights?: string[]
+  itinFriendly?: boolean
+}
+
 export const PRODUCTS: Product[] = [
   {
-    id: "itin-lending",
-    name: "ITIN Lending",
-    summary: "Loans using an Individual Taxpayer Identification Number.",
-    whyItHelps: "Builds credit and access to fair financing without SSN.",
-    eligibility: ["ITIN", "Proof of income"],
-    tags: ["itin", "credit", "access"],
+    id: 'kasasa-cash',
+    name: 'Kasasa Cash® Checking',
+    category: 'Checking',
+    description: 'High-yield checking with no monthly fees and no minimum balance.',
+    url: 'https://www.connectidaho.org/checking',
+    highlights: ['No monthly fees', 'No minimum balance', 'Rewards for debit use'],
   },
   {
-    id: "fresh-start-checking",
-    name: "Fresh Start Checking",
-    summary: "No-overdraft account to reset safely.",
-    whyItHelps: "Avoids surprise fees while rebuilding confidence.",
-    fees: "$0–$5/mo",
-    tags: ["fresh-start", "safety", "access"],
+    id: 'personal-loan',
+    name: 'Personal Loans',
+    category: 'Loans',
+    description: 'Unsecured loans for emergencies, bills, or debt consolidation.',
+    url: 'https://www.connectidaho.org/personal-loans',
+    highlights: ['Flexible use', 'Fast approvals'],
+    itinFriendly: true,
   },
   {
-    id: "relief-loan",
-    name: "Relief Loan",
-    summary: "Small-dollar loan replacing payday debt.",
-    whyItHelps: "Lower cost, fixed terms, predictable payments.",
-    tags: ["relief", "liquidity", "safety", "debt"],
+    id: 'auto-loan',
+    name: 'Auto Loans',
+    category: 'Loans',
+    description: 'Competitive rates and flexible terms for new or used vehicles.',
+    url: 'https://www.connectidaho.org/auto-loans',
+    highlights: ['Great rates', 'Quick decisions'],
+    itinFriendly: true,
   },
   {
-    id: "credit-builder",
-    name: "Credit Builder Loan",
-    summary: "A small loan held in savings to build history.",
-    whyItHelps: "Improves credit while growing savings.",
-    tags: ["credit", "savings"],
+    id: 'home-loan',
+    name: 'Home Loans',
+    category: 'Loans',
+    description: 'Purchase, refinance, or build with a local lender who listens.',
+    url: 'https://www.connectidaho.org/home-loans',
+    highlights: ['Local service', 'Personal guidance'],
   },
   {
-    id: "auto-saver",
-    name: "AutoSaver",
-    summary: "Automatic savings from each paycheck.",
-    whyItHelps: "Smooths income swings and grows a cushion.",
-    tags: ["savings", "liquidity", "emergency", "planning"],
+    id: 'connected-checking',
+    name: 'Connected Checking',
+    category: 'Checking',
+    description: 'Simple, no-fee checking with mobile access.',
+    url: 'https://www.connectidaho.org/checking',
+    highlights: ['No fees', 'Mobile access'],
   },
   {
-    id: "secured-card",
-    name: "Secured Credit Card",
-    summary: "Deposit-backed credit line to build safely.",
-    whyItHelps: "Builds credit responsibly with clear limits.",
-    tags: ["credit", "safety"],
+    id: 'financial-literacy',
+    name: 'Financial Literacy Resources',
+    category: 'Services',
+    description: 'Educational articles, videos, and calculators for better money habits.',
+    url: 'https://www.connectidaho.org/financial-literacy',
+    highlights: ['Free tools', 'Guides for all ages'],
   },
-];
+  {
+    id: 'mobile-unit',
+    name: 'Mobile Unit',
+    category: 'Services',
+    description: 'Bringing financial services directly to rural communities.',
+    url: 'https://www.connectidaho.org/mobile-unit',
+    highlights: ['On-the-go service', 'Rural access'],
+  },
+]

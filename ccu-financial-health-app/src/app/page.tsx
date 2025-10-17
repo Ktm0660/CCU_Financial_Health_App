@@ -1,71 +1,37 @@
-import Link from "next/link";
-
-function Icon({children}:{children:React.ReactNode}) {
-  return <span className="icon">{children}</span>;
-}
+import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="stack-lg">
-      {/* Hero */}
-      <section className="card-hero card-pad shadow-hover">
-        <div className="stack-lg">
-          <div className="stack">
-            <h1 className="h1">Money, made simpler.</h1>
-            <p className="lead">Short checkup. Clear next steps. Transparent products that fit your life.</p>
-          </div>
-          <div style={{display:'flex',gap:'.75rem',flexWrap:'wrap'}}>
-            <Link href="/assess" className="btn btn-primary">Take the 2-minute checkup</Link>
-            <Link href="/products" className="btn btn-outline">Explore products</Link>
-          </div>
+    <div className="space-y-10">
+      <section className="card p-6 bg-gradient-to-br from-brand-sand to-white">
+        <h1 className="text-3xl md:text-4xl font-bold text-brand-navy">Financial Wellness Made Simple</h1>
+        <p className="mt-2 text-brand-stone max-w-prose">
+          Friendly guidance built for Idaho—clear steps, no judgment, and tools that fit your life.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link href="/assess" className="btn-primary">Start Your Checkup</Link>
+          <Link href="/learn" className="underline text-brand-blue">Browse Education</Link>
         </div>
       </section>
 
-      {/* Pillars */}
-      <section className="grid-3">
-        <article className="card card-pad shadow-hover">
-          <div className="stack">
-            <Icon>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M12 3l9 6-9 6-9-6 9-6Z" stroke="var(--brand-blue)" strokeWidth="1.8"/>
-              </svg>
-            </Icon>
-            <h2 className="h2">Simple</h2>
-            <p className="muted">Plain language and small steps you can use today.</p>
+      <section className="grid gap-5 md:grid-cols-3">
+        {[
+          { title: 'Lower Costs', desc: 'Fair rates and no hidden fees.' },
+          { title: 'Simple Guidance', desc: 'Plain language and step-by-step help.' },
+          { title: 'Real Service', desc: 'Certified counselors and a mobile unit that comes to you.' },
+        ].map(c => (
+          <div key={c.title} className="card p-6">
+            <div className="badge">{c.title}</div>
+            <p className="mt-3 text-brand-ink">{c.desc}</p>
           </div>
-        </article>
-        <article className="card card-pad shadow-hover">
-          <div className="stack">
-            <Icon>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M4 4h16v12H4V4Zm0 12 4 4h8l4-4" stroke="var(--brand-blue)" strokeWidth="1.8"/>
-              </svg>
-            </Icon>
-            <h2 className="h2">Transparent</h2>
-            <p className="muted">Upfront about costs, terms, and how each product helps.</p>
-          </div>
-        </article>
-        <article className="card card-pad shadow-hover">
-          <div className="stack">
-            <Icon>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M6 12l3 3 9-9" stroke="var(--brand-blue)" strokeWidth="1.8"/>
-              </svg>
-            </Icon>
-            <h2 className="h2">Supportive</h2>
-            <p className="muted">Certified counselors, a mobile unit, and a community-first approach.</p>
-          </div>
-        </article>
+        ))}
       </section>
 
-      {/* CTA */}
-      <section className="card card-pad shadow-hover">
-        <div className="stack">
-          <h2 className="h2">Get started</h2>
-          <p className="muted">Answer a few questions. We’ll suggest small actions and products with total transparency.</p>
-          <Link href="/assess" className="btn btn-primary">Start the assessment</Link>
-        </div>
+      <section className="card p-6 text-center">
+        <h2 className="text-xl font-semibold text-brand-navy">Ready to take your first step?</h2>
+        <p className="mt-2 text-brand-stone">Take our short assessment and see your best next move.</p>
+        <Link href="/assess" className="btn-primary mt-4 inline-block">Start Now</Link>
       </section>
     </div>
-  );
+  )
 }
