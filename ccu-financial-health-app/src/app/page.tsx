@@ -1,71 +1,21 @@
-import Link from "next/link";
-
-function Icon({children}:{children:React.ReactNode}) {
-  return <span className="icon">{children}</span>;
-}
+import Hero from "@/components/Hero";
+import Container from "@/components/Container";
+import SectionCard from "@/components/SectionCard";
 
 export default function Home() {
   return (
-    <div className="stack-lg">
-      {/* Hero */}
-      <section className="card-hero card-pad shadow-hover">
-        <div className="stack-lg">
-          <div className="stack">
-            <h1 className="h1">Money, made simpler.</h1>
-            <p className="lead">Short checkup. Clear next steps. Transparent products that fit your life.</p>
+    <>
+      <Hero />
+      <section className="mt-8 sm:mt-10">
+        <Container>
+          <div className="grid gap-5 sm:gap-6 md:grid-cols-2">
+            <SectionCard title="Simple">Plain language and small steps you can use today.</SectionCard>
+            <SectionCard title="Transparent">Upfront about costs, terms, and how each product helps.</SectionCard>
+            <SectionCard title="Supportive">Certified counselors, a mobile unit, and a community-first approach.</SectionCard>
+            <SectionCard title="Get started">Answer a few questions and see small, doable next steps.</SectionCard>
           </div>
-          <div style={{display:'flex',gap:'.75rem',flexWrap:'wrap'}}>
-            <Link href="/assess" className="btn btn-primary">Take the 2-minute checkup</Link>
-            <Link href="/products" className="btn btn-outline">Explore products</Link>
-          </div>
-        </div>
+        </Container>
       </section>
-
-      {/* Pillars */}
-      <section className="grid-3">
-        <article className="card card-pad shadow-hover">
-          <div className="stack">
-            <Icon>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M12 3l9 6-9 6-9-6 9-6Z" stroke="var(--brand-blue)" strokeWidth="1.8"/>
-              </svg>
-            </Icon>
-            <h2 className="h2">Simple</h2>
-            <p className="muted">Plain language and small steps you can use today.</p>
-          </div>
-        </article>
-        <article className="card card-pad shadow-hover">
-          <div className="stack">
-            <Icon>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M4 4h16v12H4V4Zm0 12 4 4h8l4-4" stroke="var(--brand-blue)" strokeWidth="1.8"/>
-              </svg>
-            </Icon>
-            <h2 className="h2">Transparent</h2>
-            <p className="muted">Upfront about costs, terms, and how each product helps.</p>
-          </div>
-        </article>
-        <article className="card card-pad shadow-hover">
-          <div className="stack">
-            <Icon>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path d="M6 12l3 3 9-9" stroke="var(--brand-blue)" strokeWidth="1.8"/>
-              </svg>
-            </Icon>
-            <h2 className="h2">Supportive</h2>
-            <p className="muted">Certified counselors, a mobile unit, and a community-first approach.</p>
-          </div>
-        </article>
-      </section>
-
-      {/* CTA */}
-      <section className="card card-pad shadow-hover">
-        <div className="stack">
-          <h2 className="h2">Get started</h2>
-          <p className="muted">Answer a few questions. We’ll suggest small actions and products with total transparency.</p>
-          <Link href="/assess" className="btn btn-primary">Start the assessment</Link>
-        </div>
-      </section>
-    </div>
+    </>
   );
 }
