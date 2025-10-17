@@ -2,13 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Brand palette (CSS vars only, used in a few custom rules) */
 :root{
   --ink:#0b2e4e;          /* deep navy */
-  --ink-2:#2a4d68;        /* secondary ink */
+  --ink-2:#2a4d68;        /* secondary */
   --accent:#2e6d8a;       /* teal/blue */
   --accent-700:#25566d;   /* darker teal */
-  --bg:#f5f9fc;           /* soft light background */
+  --bg:#f5f9fc;           /* soft light */
   --card:#ffffff;         /* white card */
   --line:#e5edf5;         /* subtle border */
 }
@@ -16,8 +15,8 @@ html,body{height:100%}
 body{
   color:var(--ink);
   background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(46,109,138,0.08), transparent 60%),
-    radial-gradient(900px 400px at -10% 10%, rgba(11,46,78,0.06), transparent 55%),
+    radial-gradient(1100px 500px at 85% -10%, rgba(46,109,138,.08), transparent 60%),
+    radial-gradient(900px 400px at -10% 15%, rgba(11,46,78,.06), transparent 55%),
     linear-gradient(180deg,var(--bg),#ffffff 70%, var(--bg));
   font-feature-settings:"liga" 1,"calt" 1;
 }
