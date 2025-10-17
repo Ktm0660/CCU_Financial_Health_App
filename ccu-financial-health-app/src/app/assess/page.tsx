@@ -1,83 +1,139 @@
 "use client";
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { QUESTIONS, Choice, computeScore, scoreBand, improvementTags, nextSteps } from "@/lib/assessment";
 
-export default function AssessPage() {
-  const [answers, setAnswers] = useState<Record<string, Choice>>({});
-  const answered = Object.keys(answers).length;
-  const progress = Math.round((answered / QUESTIONS.length) * 100);
+type ScoreBand = "Great" | "Okay" | "Needs attention";
+function bandFor(score:number): ScoreBand {
+  if (score >= 75) return "Great";
+  if (score >= 50) return "Okay";
+  return "Needs attention";
+}
 
-  const { score, band, color, tags } = useMemo(() => {
-    const score = computeScore(answers);
-    const { band, color } = scoreBand(score);
-    const tags = improvementTags(answers).slice(0, 8);
-    return { score, band, color, tags };
-  }, [answers]);
+export default function Assess() {
+  const [income, setIncome] = useState<number | "">("");
+  const [rent, setRent] = useState<number | "">("");
+  const [debt, setDebt] = useState<number | "">("");
+  const [savings, setSavings] = useState<number | "">("");
+  const [payTiming, setPayTiming] = useState("steady"); // steady | uneven
+  const [emergency, setEmergency] = useState("no");     // yes | no
 
-  const tips = nextSteps(tags);
+  const score = useMemo(() => {
+    const i = typeof income === "number" ? income : 0;
+    const r = typeof rent === "number" ? rent : 0;
+    const d = typeof debt === "number" ? debt : 0;
+    const s = typeof savings === "number" ? savings : 0;
+
+    let raw = 0;
+    raw += i > 0 ? Math.max(0, 35 - (r / i) * 100) : 0; // housing
+    raw += i > 0 ? Math.max(0, 30 - (d / i) * 100) : 0; // debt payments
+    raw += Math.min(35, (s / (i || 1)) * 100);          // savings
+    if (payTiming === "steady") raw += 5;
+    if (emergency === "yes") raw += 5;
+
+    return Math.max(0, Math.min(100, Math.round(raw)));
+  }, [income, rent, debt, savings, payTiming, emergency]);
+
+  const band = bandFor(score);
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="page-title">Financial Wellness Checkup</h1>
-        <p className="lead">Short questions. No wrong answers. Get small, useful next steps.</p>
-        <div className="mt-4 w-full bg-white rounded-full h-3 overflow-hidden border border-slate-200">
-          <div className="bg-brand-blue h-3 transition-all" style={{ width: `${progress}%` }} />
-        </div>
-        <div className="mt-2 text-sm text-brand-gray">{answered}/{QUESTIONS.length} answered</div>
-      </header>
-
-      <section className="card space-y-6">
-        <div className="grid sm:grid-cols-2 gap-5">
-          {QUESTIONS.map((q, i) => (
-            <div key={q.id} className="space-y-3">
-              <p className="text-base sm:text-lg font-medium text-brand-navy">{i + 1}. {q.text}</p>
-              <div className="flex gap-2">
-                {(["yes","sometimes","no"] as Choice[]).map((val) => {
-                  const selected = answers[q.id] === val;
-                  return (
-                    <button
-                      key={val}
-                      className={`btn flex-1 ${selected ? "btn-primary" : "btn-outline"}`}
-                      onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: val }))}
-                      aria-pressed={selected}
-                    >
-                      {val === "yes" ? "Yes" : val === "sometimes" ? "Sometimes" : "No"}
-                    </button>
-                  );
-                })}
-              </div>
+    <div className="grid-auto">
+      {/* Left: form */}
+      <section className="card card-pad shadow-hover">
+        <div className="stack-lg">
+          <div className="kv">
+            <div style={{display:'flex',alignItems:'center',gap:'.6rem'}}>
+              <span className="icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M4 7h16M4 12h16M4 17h10" stroke="var(--brand-blue)" strokeWidth="1.8"/>
+                </svg>
+              </span>
+              <h1 className="h2" style={{margin:0}}>Financial Checkup</h1>
             </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid lg:grid-cols-3 gap-6">
-        <div className="card lg:col-span-2">
-          <h2 className="section-title">Your Snapshot</h2>
-          <div className="mt-4 flex items-end gap-6">
-            <div className="text-5xl font-bold text-brand-navy">{score}</div>
-            <div className="pb-1">
-              <div className={`text-lg font-semibold ${color}`}>{band}</div>
-              <div className="text-brand-gray text-sm">Score out of 100</div>
-            </div>
+            <span className="badge badge-ok">Private</span>
           </div>
-          <p className="mt-4 text-brand-gray">Pick one small change to try this month—momentum beats perfection.</p>
-        </div>
+          <p className="muted">A short, judgment-free snapshot. We don’t store answers here.</p>
 
-        <div className="card">
-          <h2 className="section-title">Next Steps</h2>
-          <ul className="mt-3 list-disc space-y-2 pl-5 text-brand-ink">
-            {tips.map((t, i) => <li key={i}>{t}</li>)}
-          </ul>
-          <div className="mt-4">
-            <Link className="btn btn-primary w-full" href={{ pathname: "/products", query: { tags: tags.join(",") } }}>
-              See products that help
-            </Link>
+          <div className="stack">
+            <label className="label">Monthly take-home pay</label>
+            <input className="input" inputMode="decimal" placeholder="e.g. 3200"
+                   value={income} onChange={(e)=> setIncome(e.target.value === "" ? "" : Number(e.target.value))}/>
+            <span className="muted" style={{fontSize:'.9rem'}}>What lands in your account after taxes and deductions.</span>
+          </div>
+
+          <div className="stack">
+            <label className="label">Monthly housing payment</label>
+            <input className="input" inputMode="decimal" placeholder="Rent or mortgage"
+                   value={rent} onChange={(e)=> setRent(e.target.value === "" ? "" : Number(e.target.value))}/>
+          </div>
+
+          <div className="stack">
+            <label className="label">Monthly debt payments (credit cards, loans)</label>
+            <input className="input" inputMode="decimal" placeholder="Total minimums due"
+                   value={debt} onChange={(e)=> setDebt(e.target.value === "" ? "" : Number(e.target.value))}/>
+          </div>
+
+          <div className="stack">
+            <label className="label">Savings today</label>
+            <input className="input" inputMode="decimal" placeholder="Cash you can use if needed"
+                   value={savings} onChange={(e)=> setSavings(e.target.value === "" ? "" : Number(e.target.value))}/>
+          </div>
+
+          <div className="stack">
+            <span className="label">Pay schedule</span>
+            <label className="tile"><input type="radio" name="pay" checked={payTiming==="steady"} onChange={()=>setPayTiming("steady")}/> <span>Steady (same days/amounts)</span></label>
+            <label className="tile"><input type="radio" name="pay" checked={payTiming==="uneven"} onChange={()=>setPayTiming("uneven")}/> <span>Uneven (varies week to week)</span></label>
+          </div>
+
+          <div className="stack">
+            <span className="label">Could you borrow from someone in an emergency?</span>
+            <label className="tile"><input type="radio" name="em" checked={emergency==="yes"} onChange={()=>setEmergency("yes")}/> <span>Yes</span></label>
+            <label className="tile"><input type="radio" name="em" checked={emergency==="no"} onChange={()=>setEmergency("no")}/> <span>No</span></label>
           </div>
         </div>
       </section>
+
+      {/* Right: results */}
+      <aside className="card card-pad shadow-hover">
+        <div className="stack-lg">
+          <div className="kv">
+            <h2 className="h2" style={{margin:0}}>Your snapshot</h2>
+            <span className={`badge ${band==="Great"?"badge-ok":band==="Okay"?"badge-warn":"badge-bad"}`}>{band}</span>
+          </div>
+
+          <div className="stack-sm">
+            <div className="kv">
+              <strong>Score</strong>
+              <strong style={{fontSize:'2rem',color:'var(--brand-navy)'}}>{score}</strong>
+            </div>
+            <div className="meter" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={score}>
+              <span style={{width:`${score}%`}} />
+            </div>
+            <p className="muted" style={{fontSize:'.92rem'}}>Higher is better. We’ll aim to gently nudge this up over time.</p>
+          </div>
+
+          <div className="hr"></div>
+
+          <div className="stack">
+            <h3 className="h3">What to do next</h3>
+            <ul className="muted" style={{paddingLeft:'1.2rem',lineHeight:'1.65'}}>
+              <li>Try to keep housing near 35% of income.</li>
+              <li>Autopay at least minimums to avoid fees.</li>
+              <li>Build a small cushion ($20–$50 per paycheck).</li>
+            </ul>
+            <a className="btn btn-subtle" href="/products">See low-cost products &amp; terms</a>
+          </div>
+
+          <div className="hr"></div>
+
+          <div className="stack">
+            <h3 className="h3">Your quick facts</h3>
+            <div className="stack-sm">
+              <div className="kv"><span className="muted">Housing ÷ Income</span><strong>{typeof income==="number" && income>0 ? Math.round((Number(rent||0)/income)*100) : 0}%</strong></div>
+              <div className="kv"><span className="muted">Debt ÷ Income</span><strong>{typeof income==="number" && income>0 ? Math.round((Number(debt||0)/income)*100) : 0}%</strong></div>
+              <div className="kv"><span className="muted">Savings ÷ Income</span><strong>{typeof income==="number" && income>0 ? Math.round((Number(savings||0)/income)*100) : 0}%</strong></div>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }
