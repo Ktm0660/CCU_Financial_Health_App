@@ -15,10 +15,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <Nav langToggle={LangToggle} />
-        <main className="mx-auto max-w-2xl lg:max-w-5xl px-4 sm:px-6 py-6 sm:py-10">
-          {children}
-        </main>
+        <div className="sticky top-0 z-30 backdrop-blur bg-white/70 border-b border-slate-200">
+          <Nav langToggle={LangToggle} />
+        </div>
+        <main className="container-page section-gap">{children}</main>
         <Footer />
       </body>
     </html>
