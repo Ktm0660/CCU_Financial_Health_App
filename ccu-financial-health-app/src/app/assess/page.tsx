@@ -1,233 +1,371 @@
 "use client";
+import { useMemo, useState } from "react";
+import Container from "@/components/Container";
+import Bar from "@/components/Bar";
 
-import React from "react";
-import { QUESTIONS, AssessmentAnswers, scoreDimensions, dimensionMessage, nextSteps } from "@/lib/assessmentModel";
+/**
+ * Connections CU · Simple 15-Question Assessment
+ * Designed for rural & first-time bank users:
+ * - One screen per question with big tappable chips
+ * - Zero jargon; plain language; minimal typing
+ * - Score 0–100 with category weights
+ * - Gentle, transparent recommendations (not salesy)
+ *
+ * Categories & weights:
+ * 1) Access & Basics (checking, direct deposit, ID/eligibility proxy) ........ 25
+ * 2) Safety Net & Bills (emergency cash, current on housing/utilities) ....... 30
+ * 3) Stability (transportation, phone/internet, income timing) ............... 20
+ * 4) Obligations & Risk (payday/title loan, collections, debt stress) ........ 15
+ * 5) Confidence & Support (comfort reading statements, counselor opt-in) ..... 10
+ */
 
-type Lang = "en" | "es";
+type ChipVal = string;
 
-export default function AssessPage() {
-  const [lang, setLang] = React.useState<Lang>("en");
-  const [answers, setAnswers] = React.useState<AssessmentAnswers>(
-    Object.fromEntries(QUESTIONS.map(q => [q.id, null]))
+type Q = {
+  id: string;
+  label: string;
+  help?: string;
+  kind: "chips" | "number";
+  options?: ChipVal[]; // for chips
+  optional?: boolean;
+};
+
+const QUESTIONS: Q[] = [
+  { id:"q1_checking", label:"Do you have a checking account right now?", kind:"chips", options:["Yes","No","Not sure"] },
+  { id:"q2_deposit", label:"Do you use direct deposit for income?", kind:"chips", options:["Yes","No","Sometimes"] },
+  { id:"q3_liquidity", label:"If you needed cash today, about how much could you use?", kind:"chips", options:["None","$1–$100","$100–$500",">$500"] },
+  { id:"q4_housing_current", label:"Are you current on rent or mortgage?", kind:"chips", options:["Yes","No","Not applicable"] },
+  { id:"q5_utils_current", label:"Are you current on utilities/phone?", kind:"chips", options:["Yes","No"] },
+  { id:"q6_highcost", label:"Do you have a payday/title/online loan right now?", kind:"chips", options:["Yes","No"] },
+  { id:"q7_collections", label:"Is anything in collections?", kind:"chips", options:["Yes","No","Not sure"] },
+  { id:"q8_transport", label:"Is your transportation reliable most weeks?", kind:"chips", options:["Yes","No"] },
+  { id:"q9_connectivity", label:"Is your phone or internet reliable most weeks?", kind:"chips", options:["Yes","No"] },
+  { id:"q10_income_timing", label:"Is your income timing steady most months?", kind:"chips", options:["Steady","Varies"] },
+  { id:"q11_set_aside", label:"Could you set aside at least $20 each paycheck?", kind:"chips", options:["Yes","Some months","No"] },
+  { id:"q12_comfort", label:"Reading statements/fees feels…", kind:"chips", options:["Comfortable","I need help"] },
+  { id:"q13_language", label:"Preferred language for materials", kind:"chips", options:["English","Español"] },
+  { id:"q14_priority", label:"Which is your top priority?", kind:"chips", options:["Build savings","Lower debt","Credit score","Car","Home","Just learn"] },
+  { id:"q15_counselor", label:"Would you like a counselor to reach out (free)?", kind:"chips", options:["Yes","No"] },
+];
+
+// UI bits
+function Chip({label, pressed, onClick}:{label:string; pressed:boolean; onClick:()=>void}) {
+  return (
+    <button
+      type="button"
+      className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-medium transition-colors hover:border-[color:#0E7DB6] hover:text-[color:#0E7DB6] data-[active=true]:bg-[rgb(14,125,182,0.10)]"
+      data-active={pressed}
+      aria-pressed={pressed}
+      onClick={onClick}
+    >
+      {label}
+    </button>
   );
-  const [submitted, setSubmitted] = React.useState(false);
+}
 
-  const t = (en: string, es: string) => (lang === "en" ? en : es);
+type Band = "Great" | "Okay" | "Needs attention";
+function bandFor(score:number): Band {
+  if (score >= 75) return "Great";
+  if (score >= 50) return "Okay";
+  return "Needs attention";
+}
 
-  const { Habits, Confidence, Stability } = scoreDimensions(answers);
-  const overall = Math.round((Habits + Confidence + Stability) / 3);
+// Recommendation helper
+type Rec = { title:string; why:string };
+function uniquePush(arr:Rec[], item:Rec) {
+  if (!arr.find(x=>x.title===item.title)) arr.push(item);
+}
 
-  const handleSelect = (qid: string, value: number) => {
-    setAnswers(prev => ({ ...prev, [qid]: value }));
-  };
+export default function Assess() {
+  const [step, setStep] = useState(0); // index into QUESTIONS
+  const [answers, setAnswers] = useState<Record<string, ChipVal | number | null>>({});
 
-  const resetForm = () => {
-    setAnswers(Object.fromEntries(QUESTIONS.map(q => [q.id, null])));
-    setSubmitted(false);
-  };
+  const q = QUESTIONS[step];
+
+  function setAnswer(id:string, val:ChipVal | number) {
+    setAnswers(prev => ({...prev, [id]: val}));
+  }
+
+  const progressPercent = Math.round((step / QUESTIONS.length) * 100);
+
+  // Compute score
+  const { score, band, recs } = useMemo(()=>{
+    let pts = 0;
+
+    // Access & Basics (25)
+    // q1_checking, q2_deposit, q13_language (no score), proxy trust via comfort later
+    if (answers["q1_checking"] === "Yes") pts += 12;
+    if (answers["q2_deposit"] === "Yes") pts += 10;
+    if (answers["q2_deposit"] === "Sometimes") pts += 5;
+
+    // Safety Net & Bills (30)
+    // q3_liquidity
+    const liq = answers["q3_liquidity"];
+    if (liq === ">$500") pts += 12;
+    else if (liq === "$100–$500") pts += 9;
+    else if (liq === "$1–$100") pts += 4;
+    // q4_housing_current
+    if (answers["q4_housing_current"] === "Yes") pts += 9;
+    // q5_utils_current
+    if (answers["q5_utils_current"] === "Yes") pts += 9;
+
+    // Stability (20)
+    if (answers["q8_transport"] === "Yes") pts += 7;
+    if (answers["q9_connectivity"] === "Yes") pts += 7;
+    if (answers["q10_income_timing"] === "Steady") pts += 6;
+
+    // Obligations & Risk (15) – subtractors
+    if (answers["q6_highcost"] === "Yes") pts -= 8;
+    const coll = answers["q7_collections"];
+    if (coll === "Yes") pts -= 7;
+    if (coll === "Not sure") pts -= 3;
+
+    // Confidence & Support (10)
+    if (answers["q11_set_aside"] === "Yes") pts += 6;
+    if (answers["q11_set_aside"] === "Some months") pts += 3;
+    if (answers["q12_comfort"] === "Comfortable") pts += 4;
+
+    // Clamp & band
+    const s = Math.max(0, Math.min(100, pts));
+    const b = bandFor(s);
+
+    // Recommendations (gentle, need-based)
+    const rs: Rec[] = [];
+
+    // Basics / Access
+    if (answers["q1_checking"] !== "Yes") {
+      uniquePush(rs, {
+        title: "Open Everyday Checking",
+        why: "No surprise fees and direct deposit friendly. We’ll explain terms up front."
+      });
+    }
+    if (answers["q2_deposit"] !== "Yes") {
+      uniquePush(rs, {
+        title: "Set up Direct Deposit",
+        why: "Faster access to pay and fewer check-cashing fees."
+      });
+    }
+
+    // Safety net
+    if (liq === "None" || liq === "$1–$100") {
+      uniquePush(rs, {
+        title: "Start a $20 Cushion",
+        why: "Save $20 per paycheck to reach $200–$300 quickly and avoid fees."
+      });
+      uniquePush(rs, {
+        title: "Cash Cushion (Small-Dollar Loan)",
+        why: "Short-term bridge with clear terms and no prepayment penalty."
+      });
+    }
+
+    // Bills behind
+    if (answers["q4_housing_current"] === "No" || answers["q5_utils_current"] === "No") {
+      uniquePush(rs, {
+        title: "Payment Plan & Hardship Review",
+        why: "We’ll call providers together and build a catch-up plan that fits your budget."
+      });
+    }
+
+    // High-cost obligations
+    if (answers["q6_highcost"] === "Yes") {
+      uniquePush(rs, {
+        title: "Relief Refinance / Pay-down Plan",
+        why: "Replace high-cost debt with a lower, fixed payment and a clear payoff date."
+      });
+    }
+
+    // Collections or unsure
+    if (answers["q7_collections"] === "Yes" || answers["q7_collections"] === "Not sure") {
+      uniquePush(rs, {
+        title: "Credit Report Check",
+        why: "We’ll pull free reports and make a step-by-step plan to settle or dispute."
+      });
+      uniquePush(rs, {
+        title: "Pathway Credit Builder",
+        why: "Build positive history using a small secured installment—savings stays yours."
+      });
+    }
+
+    // Stability helpers
+    if (answers["q8_transport"] === "No") {
+      uniquePush(rs, {
+        title: "Reliable Wheels Plan",
+        why: "Budget for repairs or find an affordable auto—terms explained clearly."
+      });
+    }
+    if (answers["q9_connectivity"] === "No") {
+      uniquePush(rs, {
+        title: "Low-Cost Connectivity Tips",
+        why: "Free Wi-Fi spots, assistance programs, and phone plans we see work well."
+      });
+    }
+
+    // Set-aside and comfort
+    if (answers["q11_set_aside"] === "No" || answers["q12_comfort"] === "I need help") {
+      uniquePush(rs, {
+        title: "15-Minute Budget Setup",
+        why: "We’ll map bills to paydays and auto-save a few dollars without stress."
+      });
+    }
+
+    // Language & counselor
+    if (answers["q13_language"] === "Español") {
+      uniquePush(rs, {
+        title: "Recursos en Español",
+        why: "Guías simples, ejemplos y apoyo en tu idioma."
+      });
+    }
+    if (answers["q15_counselor"] === "Yes") {
+      uniquePush(rs, {
+        title: "Meet a Certified Counselor",
+        why: "Free and judgment-free. We focus on 2–3 small wins you choose."
+      });
+    }
+
+    return { score: s, band: b, recs: rs.slice(0, 7) };
+  }, [answers]);
+
+  // Navigation
+  const canNext = step < QUESTIONS.length - 1;
+  const canBack = step > 0;
+
+  const bandTone = band === "Great" ? "text-emerald-600 bg-[rgb(16,185,129,0.12)]" : band === "Okay" ? "text-amber-600 bg-[rgb(217,119,6,0.12)]" : "text-rose-600 bg-[rgb(220,38,38,0.12)]";
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Top bar */}
-      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-slate-200">
-        <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-md bg-emerald-600" />
-            <h1 className="text-slate-900 font-semibold">
-              {t("Connections Financial Wellness Assessment", "Evaluación de Bienestar Financiero de Connections")}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              className={`text-sm px-3 py-1.5 rounded-md border ${lang === "en" ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-700 border-slate-300"}`}
-              onClick={() => setLang("en")}
-              aria-pressed={lang === "en"}
-            >
-              English
-            </button>
-            <button
-              className={`text-sm px-3 py-1.5 rounded-md border ${lang === "es" ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-700 border-slate-300"}`}
-              onClick={() => setLang("es")}
-              aria-pressed={lang === "es"}
-            >
-              Español
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero / intro */}
-      <section className="bg-gradient-to-br from-emerald-50 to-sky-50 border-y border-slate-200">
-        <div className="mx-auto max-w-5xl px-4 py-8">
-          <h2 className="text-2xl md:text-3xl font-semibold text-slate-900">
-            {t("Let’s get a clear, judgment-free picture together",
-               "Construyamos juntos una imagen clara y sin juicios")}
-          </h2>
-          <p className="mt-2 text-slate-700 max-w-3xl">
-            {t(
-              "Answer a few simple questions. We’ll show friendly insights and practical next steps. You can bring these to a counselor or use them on your own.",
-              "Responda algunas preguntas sencillas. Le mostraremos ideas amigables y pasos prácticos. Puede llevarlos con un asesor o usarlos por su cuenta."
-            )}
-          </p>
-        </div>
-      </section>
-
-      {/* Content */}
-      <main className="mx-auto max-w-5xl px-4 py-8 grid md:grid-cols-3 gap-6">
-        {/* Questions */}
-        <div className="md:col-span-2">
-          <div className="bg-white shadow-sm rounded-xl border border-slate-200">
-            <div className="px-4 py-3 border-b border-slate-200">
-              <h3 className="font-semibold text-slate-900">
-                {t("Your answers", "Sus respuestas")}
-              </h3>
-              <p className="text-sm text-slate-600">
-                {t("Choose the option that fits you best — no right or wrong answers.",
-                   "Elija la opción que más le represente — no hay respuestas correctas o incorrectas.")}
-              </p>
+    <Container>
+      <div className="space-y-6">
+        <div className="card p-6 sm:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <span className="eyebrow">Financial Wellness Check</span>
+              <h1 className="mt-2 text-2xl font-semibold text-[color:#0D3554]">Step {step + 1} of {QUESTIONS.length}</h1>
             </div>
-
-            <div className="p-4 space-y-6">
-              {QUESTIONS.map((q, idx) => (
-                <div key={q.id} className="rounded-lg border border-slate-200 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 h-6 w-6 shrink-0 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-semibold">
-                      {idx + 1}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-slate-900">{q.text[lang]}</p>
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        {q.choices[lang].map((c, i) => {
-                          const isSelected = answers[q.id] === c.value;
-                          return (
-                            <button
-                              key={i}
-                              onClick={() => handleSelect(q.id, c.value)}
-                              className={
-                                "text-left w-full px-3 py-2 rounded-md border transition " +
-                                (isSelected
-                                  ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-                                  : "bg-white text-slate-800 border-slate-300 hover:border-slate-400")
-                              }
-                            >
-                              {c.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="px-4 py-3 border-t border-slate-200 flex items-center gap-3">
-              <button
-                onClick={() => setSubmitted(true)}
-                className="px-4 py-2 rounded-md bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition"
-              >
-                {t("See my results", "Ver mis resultados")}
-              </button>
-              <button
-                onClick={resetForm}
-                className="px-3 py-2 rounded-md border border-slate-300 text-slate-700 hover:bg-slate-50"
-              >
-                {t("Start over", "Comenzar de nuevo")}
-              </button>
-              <span className="ml-auto text-sm text-slate-500">
-                {t("Takes about 3–4 minutes", "Toma unos 3–4 minutos")}
-              </span>
+            <span className="text-sm text-slate-500">{progressPercent}% complete</span>
+          </div>
+          <div className="mt-4 space-y-2">
+            <Bar value={progressPercent} />
+            <div className="flex items-center justify-between text-sm text-slate-500">
+              <span>Question {step + 1}</span>
+              <span>{progressPercent}%</span>
             </div>
           </div>
         </div>
 
-        {/* Results */}
-        <aside className="md:col-span-1">
-          <div className="bg-white shadow-sm rounded-xl border border-slate-200 sticky top-16">
-            <div className="px-4 py-3 border-b border-slate-200">
-              <h3 className="font-semibold text-slate-900">
-                {t("Your results", "Sus resultados")}
-              </h3>
-            </div>
+        <div className="lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-6">
+          <section className="card p-6 sm:p-8">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold text-[color:#0D3554]">{q.label}</h2>
+                {q.help ? <p className="mt-2 text-slate-600">{q.help}</p> : null}
+              </div>
 
-            <div className="p-4 space-y-4">
-              <ScoreBar label={t("Overall", "General")} value={submitted ? overall : 0} />
-              <ScoreBar label="Habits" value={submitted ? Habits : 0} />
-              <ScoreBar label={t("Confidence", "Confianza")} value={submitted ? Confidence : 0} />
-              <ScoreBar label={t("Stability", "Estabilidad")} value={submitted ? Stability : 0} />
-
-              {submitted && (
-                <div className="space-y-4">
-                  <InsightCard
-                    title="Habits"
-                    body={dimensionMessage("Habits", Habits)}
-                    items={nextSteps("Habits", Habits)}
-                  />
-                  <InsightCard
-                    title={t("Confidence", "Confianza")}
-                    body={dimensionMessage("Confidence", Confidence)}
-                    items={nextSteps("Confidence", Confidence)}
-                  />
-                  <InsightCard
-                    title={t("Stability", "Estabilidad")}
-                    body={dimensionMessage("Stability", Stability)}
-                    items={nextSteps("Stability", Stability)}
-                  />
-                  <div className="rounded-lg border border-slate-200 p-3">
-                    <p className="text-sm text-slate-700">
-                      {t(
-                        "Want a friendly, judgment-free conversation? Our certified counselors can help you turn these results into a simple plan.",
-                        "¿Quiere una conversación amable y sin juicios? Nuestros asesores certificados pueden ayudarle a convertir estos resultados en un plan sencillo."
-                      )}
-                    </p>
-                    <a
-                      href="/resources"
-                      className="inline-block mt-2 text-sm font-medium text-emerald-700 hover:text-emerald-800"
-                    >
-                      {t("See resources and safer options →", "Ver recursos y opciones más seguras →")}
-                    </a>
-                  </div>
+              {q.kind === "chips" && (
+                <div className="flex flex-wrap gap-3">
+                  {(q.options || []).map((opt) => {
+                    const pressed = answers[q.id] === opt;
+                    return <Chip key={opt} label={opt} pressed={!!pressed} onClick={() => setAnswer(q.id, opt)} />;
+                  })}
                 </div>
               )}
+
+              {q.kind === "number" && (
+                <input
+                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 shadow-soft focus:border-[color:#0E7DB6] focus:outline-none focus:ring-2 focus:ring-[rgb(14,125,182,0.2)] text-[color:#0D3554]"
+                  inputMode="decimal"
+                  placeholder="Type an amount"
+                  value={(answers[q.id] as number | "" | undefined) ?? ""}
+                  onChange={(e) => setAnswer(q.id, Number(e.target.value || 0))}
+                />
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 pt-4">
+                <button
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[color:#0E7DB6]/30 px-6 py-3 text-[color:#0E7DB6] hover:bg-[rgb(14,125,182,0.06)] disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() => setStep((s) => Math.max(0, s - 1))}
+                  disabled={!canBack}
+                >
+                  Back
+                </button>
+                <div className="flex flex-wrap gap-3">
+                  {canNext ? (
+                    <button
+                      className="gradient-btn inline-flex min-h-[44px] items-center justify-center px-6 py-3 font-semibold"
+                      onClick={() => setStep((s) => Math.min(QUESTIONS.length - 1, s + 1))}
+                    >
+                      Next
+                    </button>
+                  ) : (
+                    <a className="gradient-btn inline-flex min-h-[44px] items-center justify-center px-6 py-3 font-semibold" href="#results">
+                      See my results
+                    </a>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </aside>
-      </main>
-    </div>
-  );
-}
+          </section>
 
-function ScoreBar({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between text-sm mb-1">
-        <span className="text-slate-800 font-medium">{label}</span>
-        <span className="text-slate-600">{value}%</span>
-      </div>
-      <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
-        <div
-          className="h-full bg-emerald-600 transition-all"
-          style={{ width: `${value}%` }}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={value}
-          role="progressbar"
-        />
-      </div>
-    </div>
-  );
-}
+          <aside id="results" className="card p-6 sm:p-8 mt-6 lg:mt-0">
+            <div className="space-y-6">
+              <div>
+                <span className="eyebrow">Your snapshot</span>
+                <div className="mt-4 flex flex-wrap items-baseline justify-between gap-3">
+                  <h3 className="text-xl font-semibold text-[color:#0D3554]">Score</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${bandTone}`}>{band}</span>
+                </div>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="text-3xl font-semibold text-[color:#0D3554]">{score}</span>
+                  <span className="text-slate-500">/ 100</span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  <Bar value={score} />
+                  <p className="text-sm text-slate-600">
+                    Higher is better. We’ll aim for steady gains with small, doable steps.
+                  </p>
+                </div>
+              </div>
 
-function InsightCard({ title, body, items }: { title: string; body: string; items: string[] }) {
-  return (
-    <div className="rounded-lg border border-slate-200 p-3">
-      <h4 className="font-semibold text-slate-900">{title}</h4>
-      <p className="text-sm text-slate-700 mt-1">{body}</p>
-      <ul className="mt-2 space-y-1">
-        {items.map((it, i) => (
-          <li key={i} className="text-sm text-slate-700 list-disc ml-5">{it}</li>
-        ))}
-      </ul>
-    </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[color:#0D3554]">Next steps (no pressure)</h3>
+                <ul className="mt-3 space-y-2 list-disc pl-5 text-slate-600">
+                  {recs.length === 0 ? (
+                    <li>You’re in a good spot. Keep going—we’re here when you need us.</li>
+                  ) : (
+                    recs.map((r) => (
+                      <li key={r.title}>
+                        <strong className="text-[color:#0D3554]">{r.title}.</strong> {r.why}
+                      </li>
+                    ))
+                  )}
+                </ul>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <a className="gradient-btn inline-flex min-h-[44px] items-center justify-center px-6 py-3 font-semibold" href="/products">
+                    See options &amp; terms
+                  </a>
+                  <a
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[color:#0E7DB6]/30 px-6 py-3 text-[color:#0E7DB6] hover:bg-[rgb(14,125,182,0.06)]"
+                    href="/learn"
+                  >
+                    Learn more
+                  </a>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-[color:#0D3554]">Your choices</h3>
+                <div className="mt-3 space-y-3 text-sm text-slate-600">
+                  {QUESTIONS.map((question) => (
+                    <div key={question.id} className="flex items-start justify-between gap-3">
+                      <span className="text-slate-500">{question.label}</span>
+                      <strong className="text-[color:#0D3554]">{answers[question.id] ? String(answers[question.id]) : "—"}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </Container>
   );
 }
